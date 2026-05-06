@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Minesweeper</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #1a1a2e, #16213e); 
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            padding: 10px;
+            color: white;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1 { margin: 5px 0; font-size: 1.5rem; }
+        #info {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 20px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 1rem;
+            display: flex;
+            gap: 15px;
+        }
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 2px;
+            padding: 5px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            width: min(90vw, 90vh, 360px);
+        }
+        .cell {
+            aspect-ratio: 1;
+            background: #4a5568;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(0.7rem, 4vw, 1rem);
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        .cell.revealed { background: #2d3748; }
+        .cell.flagged { background: #e53e3e; }
+        .cell.flagged::after { content: '🚩'; font-size: clamp(0.6rem, 3vw, 0.9rem); }
+        .cell.mine { background: #c53030; }
+        .cell[data-count="1"] { color: #3182ce; }
+        .cell[data-count="2"] { color: #38a169; }
+        .cell[data-count="3"] { color: #e53e3e; }
+        .cell[data-count="4"] { color: #805ad5; }
+        .cell[data-count="5"] { color: #dd6b20; }
+        .cell[data-count="6"] { color: #319795; }
+        .cell[data-count="7"] { color: #1a202c; }
+        .cell[data-count="8"] { color: #718096; }
+        .controls { margin-top: 15px; display: flex; gap: 10px; }
+        button {
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #e53e3e, #c53030);
+            color: white;
+            font-weight: 600;
+        }
+        button:active { transform: scale(0.95); }
+        a { color: #e53e3e; text-decoration: none; margin-top: 10px; font-size: 0.85rem; }
+        .hint { opacity: 0.6; font-size: 0.75rem; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <h1>💣 Minesweeper</h1>
+    <div id="info">
+        <span>💣 <b id="mines">10</b></span>
+        <span>🚩 <b id="flags">0</b></span>
+    </div>
+    <div id="grid"></div>
+    <div class="controls">
+        <button onclick="resetGame()">New Game</button>
+    </div>
+    <p class="hint">Tap to reveal • Long press to flag</p>
+    <a href="../index.html">← Back</a>
+
+    <script>
+        const rows = 9, cols = 9, mineCount = 10;
+        let grid = [];
+        let revealed = 0;
+        let flags = 0;
+        let gameOver = false;
+        
+        function initGrid() {
+            grid = Array(rows).fill().map(() => Array(cols).fill().map(() => ({mine: false, revealed: false, flagged: false, count: 0})));
+            
+            let placed = 0;
+            while (placed < mineCount) {
+                const r = Math.floor(Math.random() * rows);
+                const c = Math.floor(Math.random() * cols);
+                if (!grid[r][c].mine) {
+                    grid[r][c].mine = true;
+                    placed++;
+                }
+            }
+            
+            for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+                if (!grid[r][c].mine) {
+                    grid[r][c].count = countAdjacent(r, c);
+                }
+            }
+        }
+        
+        function countAdjacent(r, c) {
+            let count = 0;
+            for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+                if (grid[r+dr]?.[c+dc]?.mine) count++;
+            }
+            return count;
+        }
+        
+        function render() {
+            const gridEl = document.getElementById('grid');
+            gridEl.innerHTML = '';
+            
+            grid.forEach((row, r) => row.forEach((cell, c) => {
+                const el = document.createElement('div');
+                el.className = 'cell';
+                if (cell.flagged) el.classList.add('flagged');
+                else if (cell.revealed) {
+                    el.classList.add('revealed');
+                    if (cell.mine) {
+                        el.classList.add('mine');
+                        el.textContent = '💣';
+                    } else if (cell.count) {
+                        el.textContent = cell.count;
+                        el.dataset.count = cell.count;
+                    }
+                }
+                
+                el.addEventListener('click', e => { e.preventDefault(); reveal(r, c); });
+                el.addEventListener('touchstart', e => { el.dataset.start = Date.now(); });
+                el.addEventListener('touchend', e => {
+                    e.preventDefault();
+                    if (Date.now() - el.dataset.start > 300) flag(r, c);
+                    else reveal(r, c);
+                });
+                el.addEventListener('contextmenu', e => { e.preventDefault(); flag(r, c); });
+                
+                gridEl.appendChild(el);
+            }));
+            
+            document.getElementById('flags').textContent = flags;
+        }
+        
+        function reveal(r, c) {
+            if (gameOver || grid[r][c].revealed || grid[r][c].flagged) return;
+            
+            grid[r][c].revealed = true;
+            revealed++;
+            
+            if (grid[r][c].mine) {
+                gameOver = true;
+                grid.forEach(row => row.forEach(cell => { if (cell.mine) cell.revealed = true; }));
+                render();
+                setTimeout(() => alert('💥 Game Over!'), 100);
+                return;
+            }
+            
+            if (grid[r][c].count === 0) {
+                for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+                    if (grid[r+dr]?.[c+dc]) reveal(r+dr, c+dc);
+                }
+            }
+            
+            if (revealed === rows * cols - mineCount) {
+                gameOver = true;
+                render();
+                setTimeout(() => alert('🎉 You Win!'), 100);
+                return;
+            }
+            
+            render();
+        }
+        
+        function flag(r, c) {
+            if (gameOver || grid[r][c].revealed) return;
+            grid[r][c].flagged = !grid[r][c].flagged;
+            flags += grid[r][c].flagged ? 1 : -1;
+            render();
+        }
+        
+        function resetGame() {
+            initGrid();
+            revealed = 0;
+            flags = 0;
+            gameOver = false;
+            render();
+        }
+        
+        resetGame();
+    </script>
+</body>
+</html>

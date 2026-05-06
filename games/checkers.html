@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Checkers</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #1a1a2e, #16213e); 
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            padding: 10px;
+            color: white;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1 { margin: 10px 0; font-size: 1.5rem; }
+        #status {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 25px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+        #board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            border: 3px solid #8b4513;
+            border-radius: 4px;
+            width: min(90vw, 90vh, 400px);
+            aspect-ratio: 1;
+        }
+        .square {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+        }
+        .square.light { background: #f0d9b5; }
+        .square.dark { background: #b58863; }
+        .square.selected { background: #7fc97f !important; }
+        .square.valid-move { background: #ffff99 !important; }
+        .piece {
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            font-size: clamp(1.2rem, 5vw, 1.8rem);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .piece.red { background: radial-gradient(circle at 30% 30%, #ff6b6b, #c0392b); border: 2px solid #922b21; }
+        .piece.black { background: radial-gradient(circle at 30% 30%, #555, #1a1a1a); border: 2px solid #111; }
+        .piece.king::after { content: '👑'; }
+        .piece:active { transform: scale(0.9); }
+        .controls { margin-top: 15px; }
+        button {
+            padding: 10px 24px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #8b4513, #654321);
+            color: white;
+            font-weight: 600;
+        }
+        button:active { transform: scale(0.95); }
+        a { color: #d4a574; text-decoration: none; margin-top: 10px; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <h1>🔴 Checkers ⚫</h1>
+    <div id="status">🔴 Red's Turn</div>
+    <div id="board"></div>
+    <div class="controls">
+        <button onclick="resetGame()">New Game</button>
+    </div>
+    <a href="../index.html">← Back</a>
+
+    <script>
+        let board = [];
+        let selected = null;
+        let turn = 'red';
+        let validMoves = [];
+        let mustJump = null;
+        
+        function initBoard() {
+            board = Array(8).fill().map(() => Array(8).fill(null));
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if ((r + c) % 2 === 1) board[r][c] = {color: 'black', king: false};
+                }
+            }
+            for (let r = 5; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if ((r + c) % 2 === 1) board[r][c] = {color: 'red', king: false};
+                }
+            }
+        }
+        
+        function render() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const sq = document.createElement('div');
+                    sq.className = 'square ' + ((r + c) % 2 === 0 ? 'light' : 'dark');
+                    
+                    if (selected && selected.r === r && selected.c === c) sq.classList.add('selected');
+                    if (validMoves.some(m => m.r === r && m.c === c)) sq.classList.add('valid-move');
+                    
+                    const piece = board[r][c];
+                    if (piece) {
+                        const p = document.createElement('div');
+                        p.className = `piece ${piece.color}` + (piece.king ? ' king' : '');
+                        p.addEventListener('click', e => { e.stopPropagation(); selectPiece(r, c); });
+                        p.addEventListener('touchend', e => { e.preventDefault(); selectPiece(r, c); });
+                        sq.appendChild(p);
+                    }
+                    
+                    sq.addEventListener('click', () => moveTo(r, c));
+                    sq.addEventListener('touchend', e => { e.preventDefault(); moveTo(r, c); });
+                    boardEl.appendChild(sq);
+                }
+            }
+        }
+        
+        function selectPiece(r, c) {
+            const piece = board[r][c];
+            if (!piece || piece.color !== turn) return;
+            
+            const moves = getMoves(r, c);
+            
+            if (mustJump && !moves.some(m => m.jump)) return;
+            
+            selected = {r, c};
+            validMoves = mustJump ? moves.filter(m => m.jump) : moves;
+            
+            if (validMoves.length === 0) {
+                selected = null;
+            }
+            
+            render();
+        }
+        
+        function getMoves(r, c) {
+            const piece = board[r][c];
+            if (!piece) return [];
+            
+            const moves = [];
+            const dirs = piece.king ? [[-1,-1],[-1,1],[1,-1],[1,1]] : piece.color === 'red' ? [[-1,-1],[-1,1]] : [[1,-1],[1,1]];
+            
+            for (const [dr, dc] of dirs) {
+                const nr = r + dr, nc = c + dc;
+                if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+                    if (!board[nr][nc]) {
+                        moves.push({r: nr, c: nc, jump: false});
+                    } else if (board[nr][nc].color !== piece.color) {
+                        const jr = nr + dr, jc = nc + dc;
+                        if (jr >= 0 && jr < 8 && jc >= 0 && jc < 8 && !board[jr][jc]) {
+                            moves.push({r: jr, c: jc, jump: true, captured: {r: nr, c: nc}});
+                        }
+                    }
+                }
+            }
+            
+            return moves;
+        }
+        
+        function moveTo(r, c) {
+            if (!selected) return;
+            
+            const move = validMoves.find(m => m.r === r && m.c === c);
+            if (!move) return;
+            
+            const piece = board[selected.r][selected.c];
+            board[r][c] = piece;
+            board[selected.r][selected.c] = null;
+            
+            if (move.jump) {
+                board[move.captured.r][move.captured.c] = null;
+                
+                const moreJumps = getMoves(r, c).filter(m => m.jump);
+                if (moreJumps.length > 0) {
+                    selected = {r, c};
+                    validMoves = moreJumps;
+                    checkKing(r, piece);
+                    render();
+                    return;
+                }
+            }
+            
+            checkKing(r, piece);
+            
+            turn = turn === 'red' ? 'black' : 'red';
+            selected = null;
+            validMoves = [];
+            mustJump = checkForJumps();
+            
+            document.getElementById('status').textContent = (turn === 'red' ? '🔴' : '⚫') + ` ${turn.charAt(0).toUpperCase() + turn.slice(1)}'s Turn`;
+            
+            render();
+        }
+        
+        function checkKing(r, piece) {
+            if ((piece.color === 'red' && r === 0) || (piece.color === 'black' && r === 7)) {
+                piece.king = true;
+            }
+        }
+        
+        function checkForJumps() {
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (board[r][c]?.color === turn) {
+                        if (getMoves(r, c).some(m => m.jump)) return true;
+                    }
+                }
+            }
+            return false;
+        }
+        
+        function resetGame() {
+            initBoard();
+            selected = null;
+            turn = 'red';
+            validMoves = [];
+            mustJump = false;
+            document.getElementById('status').textContent = "🔴 Red's Turn";
+            render();
+        }
+        
+        resetGame();
+    </script>
+</body>
+</html>

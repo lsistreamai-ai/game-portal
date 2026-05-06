@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tetris</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #1a1a2e, #16213e); 
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            padding: 10px;
+            color: white;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
+        }
+        h1 { margin: 5px 0; font-size: 1.5rem; }
+        .game-container { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        #score-board {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-size: 1rem;
+            display: flex;
+            gap: 20px;
+        }
+        #canvas {
+            border: 3px solid #9b59b6;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .controls { margin-top: 10px; text-align: center; }
+        button {
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+            font-weight: 600;
+            margin: 3px;
+        }
+        button:active { transform: scale(0.95); }
+        
+        .mobile-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .control-row { display: flex; gap: 10px; }
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #9b59b6, #7d3c98);
+        }
+        .control-btn.wide { width: 130px; }
+        a { color: #9b59b6; text-decoration: none; margin-top: 10px; font-size: 0.85rem; }
+        
+        @media (max-width: 400px) {
+            .control-btn { width: 50px; height: 50px; font-size: 1.3rem; }
+            .control-btn.wide { width: 110px; }
+        }
+    </style>
+</head>
+<body>
+    <h1>🧱 Tetris</h1>
+    <div class="game-container">
+        <div id="score-board">
+            <span>Score: <b id="score">0</b></span>
+            <span>Level: <b id="level">1</b></span>
+        </div>
+        <canvas id="canvas"></canvas>
+        
+        <div class="mobile-controls">
+            <div class="control-row">
+                <button class="control-btn" ontouchstart="rotate()" onclick="rotate()">↻</button>
+            </div>
+            <div class="control-row">
+                <button class="control-btn" ontouchstart="moveLeft()" onclick="moveLeft()">◀</button>
+                <button class="control-btn" ontouchstart="moveDown()" onclick="moveDown()">▼</button>
+                <button class="control-btn" ontouchstart="moveRight()" onclick="moveRight()">▶</button>
+            </div>
+            <div class="control-row">
+                <button class="control-btn wide" ontouchstart="hardDrop()" onclick="hardDrop()">Drop</button>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button onclick="resetGame()">Restart</button>
+        </div>
+    </div>
+    <a href="../index.html">← Back</a>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const cols = 10, rows = 20;
+        const blockSize = Math.floor(Math.min(window.innerWidth * 0.09, window.innerHeight * 0.04, 30));
+        canvas.width = cols * blockSize;
+        canvas.height = rows * blockSize;
+        
+        const colors = ['#f1c40f', '#3498db', '#e74c3c', '#2ecc71', '#9b59b6', '#e67e22', '#1abc9c'];
+        const shapes = [
+            [[1,1,1,1]], [[1,1],[1,1]], [[0,1,1],[1,1,0]], [[1,1,0],[0,1,1]],
+            [[1,1,1],[0,1,0]], [[1,1,1],[1,0,0]], [[1,1,1],[0,0,1]]
+        ];
+        
+        let board = Array(rows).fill().map(() => Array(cols).fill(0));
+        let current = {shape: 0, x: 3, y: 0};
+        let score = 0, level = 1, gameLoop;
+        
+        function draw() {
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            board.forEach((row, y) => row.forEach((val, x) => {
+                if (val) {
+                    ctx.fillStyle = colors[val-1];
+                    ctx.fillRect(x*blockSize, y*blockSize, blockSize-1, blockSize-1);
+                }
+            }));
+            
+            const shape = shapes[current.shape];
+            ctx.fillStyle = colors[current.shape];
+            shape.forEach((row, y) => row.forEach((val, x) => {
+                if (val) ctx.fillRect((current.x+x)*blockSize, (current.y+y)*blockSize, blockSize-1, blockSize-1);
+            }));
+        }
+        
+        function collision(shape, x, y) {
+            return shapes[shape].some((row, dy) => row.some((val, dx) => 
+                val && (board[y+dy]?.[x+dx] || x+dx < 0 || x+dx >= cols || y+dy >= rows)
+            ));
+        }
+        
+        function merge() {
+            shapes[current.shape].forEach((row, y) => row.forEach((val, x) => {
+                if (val) board[current.y+y][current.x+x] = current.shape + 1;
+            }));
+            
+            board = board.filter(row => row.some(v => v));
+            while (board.length < rows) board.unshift(Array(cols).fill(0));
+            
+            score += 100;
+            document.getElementById('score').textContent = score;
+            if (score % 500 === 0) { level++; document.getElementById('level').textContent = level; }
+            
+            current = {shape: Math.floor(Math.random()*shapes.length), x: 3, y: 0};
+            if (collision(current.shape, current.x, current.y)) {
+                clearInterval(gameLoop);
+                alert('Game Over! Score: ' + score);
+            }
+        }
+        
+        function update() {
+            if (!collision(current.shape, current.x, current.y+1)) {
+                current.y++;
+            } else {
+                merge();
+            }
+            draw();
+        }
+        
+        function moveLeft() { if (!collision(current.shape, current.x-1, current.y)) { current.x--; draw(); } }
+        function moveRight() { if (!collision(current.shape, current.x+1, current.y)) { current.x++; draw(); } }
+        function moveDown() { if (!collision(current.shape, current.x, current.y+1)) { current.y++; draw(); } }
+        function hardDrop() { while (!collision(current.shape, current.x, current.y+1)) current.y++; update(); }
+        
+        function rotate() {
+            const rotated = shapes[current.shape][0].map((_, i) => 
+                shapes[current.shape].map(row => row[i]).reverse()
+            );
+            const old = shapes[current.shape];
+            shapes[current.shape] = rotated;
+            if (collision(current.shape, current.x, current.y)) shapes[current.shape] = old;
+            draw();
+        }
+        
+        function resetGame() {
+            board = Array(rows).fill().map(() => Array(cols).fill(0));
+            current = {shape: Math.floor(Math.random()*shapes.length), x: 3, y: 0};
+            score = 0; level = 1;
+            document.getElementById('score').textContent = '0';
+            document.getElementById('level').textContent = '1';
+            clearInterval(gameLoop);
+            gameLoop = setInterval(update, 500);
+            draw();
+        }
+        
+        document.addEventListener('keydown', e => {
+            switch(e.key) {
+                case 'ArrowLeft': moveLeft(); break;
+                case 'ArrowRight': moveRight(); break;
+                case 'ArrowDown': moveDown(); break;
+                case 'ArrowUp': rotate(); break;
+                case ' ': hardDrop(); break;
+            }
+        });
+        
+        resetGame();
+    </script>
+</body>
+</html>

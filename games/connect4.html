@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Connect 4</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #1a1a2e, #16213e); 
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            padding: 10px;
+            color: white;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1 { margin: 10px 0; font-size: 1.5rem; }
+        #status {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 25px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            padding: 8px;
+            background: #2980b9;
+            border-radius: 10px;
+            width: min(90vw, 350px);
+        }
+        .cell {
+            aspect-ratio: 1;
+            background: #1a1a2e;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .cell.red { background: #e74c3c; }
+        .cell.yellow { background: #f1c40f; }
+        .cell.win { box-shadow: 0 0 15px white; }
+        .controls { margin-top: 15px; }
+        button {
+            padding: 10px 24px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #2980b9, #1a5276);
+            color: white;
+            font-weight: 600;
+        }
+        button:active { transform: scale(0.95); }
+        a { color: #3498db; text-decoration: none; margin-top: 10px; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <h1>🔴 Connect 4 🟡</h1>
+    <div id="status">🔴 Red's Turn</div>
+    <div id="grid"></div>
+    <div class="controls">
+        <button onclick="resetGame()">New Game</button>
+    </div>
+    <a href="../index.html">← Back</a>
+
+    <script>
+        const cols = 7, rows = 6;
+        let board = Array(rows).fill().map(() => Array(cols).fill(null));
+        let turn = 'red';
+        let gameOver = false;
+        
+        function render() {
+            const gridEl = document.getElementById('grid');
+            gridEl.innerHTML = '';
+            
+            board.forEach((row, r) => row.forEach((val, c) => {
+                const cell = document.createElement('div');
+                cell.className = 'cell' + (val ? ` ${val}` : '');
+                cell.addEventListener('click', () => drop(c));
+                cell.addEventListener('touchend', e => { e.preventDefault(); drop(c); });
+                gridEl.appendChild(cell);
+            }));
+        }
+        
+        function drop(col) {
+            if (gameOver) return;
+            
+            let row = -1;
+            for (let r = rows - 1; r >= 0; r--) {
+                if (!board[r][col]) { row = r; break; }
+            }
+            
+            if (row === -1) return;
+            
+            board[row][col] = turn;
+            render();
+            
+            if (checkWin(row, col)) {
+                gameOver = true;
+                document.getElementById('status').textContent = (turn === 'red' ? '🔴' : '🟡') + ` ${turn.toUpperCase()} Wins! 🎉`;
+                return;
+            }
+            
+            if (board.flat().every(v => v)) {
+                gameOver = true;
+                document.getElementById('status').textContent = "Draw!";
+                return;
+            }
+            
+            turn = turn === 'red' ? 'yellow' : 'red';
+            document.getElementById('status').textContent = (turn === 'red' ? '🔴' : '🟡') + ` ${turn.charAt(0).toUpperCase() + turn.slice(1)}'s Turn`;
+        }
+        
+        function checkWin(r, c) {
+            const dirs = [[0,1], [1,0], [1,1], [1,-1]];
+            const player = board[r][c];
+            
+            for (const [dr, dc] of dirs) {
+                let count = 1;
+                for (let i = 1; i < 4; i++) {
+                    if (board[r+dr*i]?.[c+dc*i] === player) count++;
+                    else break;
+                }
+                for (let i = 1; i < 4; i++) {
+                    if (board[r-dr*i]?.[c-dc*i] === player) count++;
+                    else break;
+                }
+                if (count >= 4) return true;
+            }
+            return false;
+        }
+        
+        function resetGame() {
+            board = Array(rows).fill().map(() => Array(cols).fill(null));
+            turn = 'red';
+            gameOver = false;
+            document.getElementById('status').textContent = "🔴 Red's Turn";
+            render();
+        }
+        
+        resetGame();
+    </script>
+</body>
+</html>

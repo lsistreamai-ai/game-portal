@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Breakout</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #1a1a2e, #16213e); 
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            padding: 10px;
+            color: white;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
+        }
+        h1 { margin: 5px 0; font-size: 1.5rem; }
+        #info {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 20px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+        #canvas {
+            border: 3px solid #9b59b6;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-width: 95vw;
+        }
+        .controls { margin-top: 10px; }
+        button {
+            padding: 10px 24px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+            font-weight: 600;
+        }
+        button:active { transform: scale(0.95); }
+        a { color: #9b59b6; text-decoration: none; margin-top: 10px; font-size: 0.85rem; }
+        .hint { opacity: 0.6; font-size: 0.75rem; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🧱 Breakout</h1>
+    <div id="info">Score: <b id="score">0</b></div>
+    <canvas id="canvas"></canvas>
+    <div class="controls">
+        <button onclick="resetGame()">Start</button>
+    </div>
+    <p class="hint">Move finger left/right</p>
+    <a href="../index.html">← Back</a>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const w = Math.min(window.innerWidth * 0.95, 400);
+        const h = Math.min(window.innerHeight * 0.5, 500);
+        canvas.width = w;
+        canvas.height = h;
+        
+        const paddleH = 12, paddleW = w * 0.22;
+        let paddleX = (w - paddleW) / 2;
+        const ballR = 8;
+        let ballX = w / 2, ballY = h - 40;
+        let dx = 3, dy = -3;
+        const brickRows = 5, brickCols = Math.floor(w / 50);
+        const brickW = (w - brickCols * 4) / brickCols, brickH = 18;
+        let bricks = [];
+        let score = 0;
+        let running = false;
+        
+        const colors = ['#e74c3c', '#f39c12', '#f1c40f', '#2ecc71', '#3498db'];
+        
+        function initBricks() {
+            bricks = [];
+            for (let r = 0; r < brickRows; r++) {
+                bricks[r] = [];
+                for (let c = 0; c < brickCols; c++) {
+                    bricks[r][c] = {x: c * (brickW + 4) + 2, y: r * (brickH + 4) + 40, alive: true};
+                }
+            }
+        }
+        
+        function draw() {
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, w, h);
+            
+            // Bricks
+            bricks.forEach((row, r) => row.forEach(b => {
+                if (b.alive) {
+                    ctx.fillStyle = colors[r];
+                    ctx.fillRect(b.x, b.y, brickW, brickH);
+                }
+            }));
+            
+            // Paddle
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(paddleX, h - paddleH - 10, paddleW, paddleH);
+            
+            // Ball
+            ctx.beginPath();
+            ctx.arc(ballX, ballY, ballR, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+        }
+        
+        function update() {
+            if (!running) return;
+            
+            ballX += dx;
+            ballY += dy;
+            
+            if (ballX < ballR || ballX > w - ballR) dx = -dx;
+            if (ballY < ballR) dy = -dy;
+            
+            if (ballY > h - ballR) {
+                running = false;
+                alert('Game Over! Score: ' + score);
+                return;
+            }
+            
+            // Paddle collision
+            if (ballY > h - paddleH - 20 && ballX > paddleX && ballX < paddleX + paddleW) {
+                dy = -Math.abs(dy);
+            }
+            
+            // Brick collision
+            bricks.forEach(row => row.forEach(b => {
+                if (b.alive && ballX > b.x && ballX < b.x + brickW && ballY > b.y && ballY < b.y + brickH) {
+                    dy = -dy;
+                    b.alive = false;
+                    score += 10;
+                    document.getElementById('score').textContent = score;
+                }
+            }));
+            
+            // Win check
+            if (bricks.flat().every(b => !b.alive)) {
+                running = false;
+                alert('🎉 You Win! Score: ' + score);
+            }
+            
+            draw();
+            requestAnimationFrame(update);
+        }
+        
+        function resetGame() {
+            paddleX = (w - paddleW) / 2;
+            ballX = w / 2;
+            ballY = h - 40;
+            dx = 3; dy = -3;
+            score = 0;
+            document.getElementById('score').textContent = '0';
+            initBricks();
+            running = true;
+            update();
+        }
+        
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            paddleX = e.touches[0].clientX - canvas.getBoundingClientRect().left - paddleW / 2;
+            paddleX = Math.max(0, Math.min(w - paddleW, paddleX));
+            if (!running) draw();
+        });
+        
+        canvas.addEventListener('mousemove', e => {
+            paddleX = e.offsetX - paddleW / 2;
+            paddleX = Math.max(0, Math.min(w - paddleW, paddleX));
+            if (!running) draw();
+        });
+        
+        initBricks();
+        draw();
+    </script>
+</body>
+</html>

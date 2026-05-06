@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tic Tac Toe</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #1a1a2e, #16213e); 
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center;
+            padding: 10px;
+            color: white;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1 { margin: 10px 0; font-size: 1.5rem; }
+        #status {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 25px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            width: min(80vw, 80vh, 300px);
+            aspect-ratio: 1;
+        }
+        .cell {
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(2.5rem, 15vw, 5rem);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        .cell:active { background: rgba(255,255,255,0.2); }
+        .cell.x { color: #e74c3c; }
+        .cell.o { color: #3498db; }
+        .cell.win { background: rgba(46, 204, 113, 0.3); }
+        .controls { margin-top: 20px; }
+        button {
+            padding: 12px 30px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            font-weight: 600;
+        }
+        button:active { transform: scale(0.95); }
+        a { color: #3498db; text-decoration: none; margin-top: 15px; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <h1>⭕ Tic Tac Toe ❌</h1>
+    <div id="status">X's Turn</div>
+    <div id="grid"></div>
+    <div class="controls">
+        <button onclick="resetGame()">New Game</button>
+    </div>
+    <a href="../index.html">← Back</a>
+
+    <script>
+        let board = Array(9).fill(null);
+        let turn = 'X';
+        let gameOver = false;
+        const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+        
+        function render() {
+            const gridEl = document.getElementById('grid');
+            gridEl.innerHTML = '';
+            
+            board.forEach((val, i) => {
+                const cell = document.createElement('div');
+                cell.className = 'cell' + (val ? ` ${val.toLowerCase()}` : '');
+                cell.textContent = val || '';
+                cell.addEventListener('click', () => move(i));
+                cell.addEventListener('touchend', e => { e.preventDefault(); move(i); });
+                gridEl.appendChild(cell);
+            });
+        }
+        
+        function move(i) {
+            if (gameOver || board[i]) return;
+            
+            board[i] = turn;
+            render();
+            
+            const win = wins.find(([a, b, c]) => board[a] && board[a] === board[b] && board[b] === board[c]);
+            
+            if (win) {
+                gameOver = true;
+                document.getElementById('status').textContent = `${turn} Wins! 🎉`;
+                win.forEach(i => document.querySelectorAll('.cell')[i].classList.add('win'));
+                return;
+            }
+            
+            if (board.every(v => v)) {
+                gameOver = true;
+                document.getElementById('status').textContent = "Draw!";
+                return;
+            }
+            
+            turn = turn === 'X' ? 'O' : 'X';
+            document.getElementById('status').textContent = `${turn}'s Turn`;
+        }
+        
+        function resetGame() {
+            board = Array(9).fill(null);
+            turn = 'X';
+            gameOver = false;
+            document.getElementById('status').textContent = "X's Turn";
+            render();
+        }
+        
+        resetGame();
+    </script>
+</body>
+</html>
