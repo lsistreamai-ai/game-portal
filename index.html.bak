@@ -242,15 +242,7 @@
                     <span class="badge arcade">Arcade</span>
                 </div>
             </a>
-        
-            <a href="games/dino.html" class="game-card">
-                <div class="game-icon" style="background: linear-gradient(135deg, #4a5568, #2d3748);">🦖</div>
-                <div class="game-info">
-                    <h3>Dino Runner</h3>
-                    <p>Endless runner</p>
-                </div>
-            </a>
-</div>
+        </div>
     </div>
     
     <footer>
