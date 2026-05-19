@@ -67,6 +67,57 @@
         }
         button:active { transform: scale(0.95); }
         a { color: #667eea; text-decoration: none; margin-top: 15px; font-size: 0.9rem; }
+        
+        /* Promotion Modal */
+        #promotion-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        #promotion-modal.show { display: flex; }
+        .promotion-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .promotion-content h2 {
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+        .promotion-pieces {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        .promotion-piece {
+            width: 70px;
+            height: 70px;
+            font-size: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .promotion-piece:hover, .promotion-piece:active {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.1);
+            border-color: #667eea;
+        }
+        .promotion-piece.white { color: #fff; }
+        .promotion-piece.black { color: #333; background: #ddd; }
     </style>
 </head>
 <body>
@@ -77,6 +128,13 @@
         <button onclick="resetGame()">New Game</button>
     </div>
     <a href="../index.html">← Back to Games</a>
+
+    <div id="promotion-modal">
+        <div class="promotion-content">
+            <h2>Choose Promotion</h2>
+            <div class="promotion-pieces" id="promotion-choices"></div>
+        </div>
+    </div>
 
     <script>
         const pieces = {
@@ -98,6 +156,7 @@
         let selectedSquare = null;
         let turn = 'white';
         let validMoves = [];
+        let pendingPromotion = null;
 
         function isWhite(p) { return p && p === p.toUpperCase(); }
         function isBlack(p) { return p && p === p.toLowerCase(); }
@@ -115,7 +174,6 @@
             const isW = isWhite(piece);
             const direction = isW ? -1 : 1;
 
-            // Simplified valid moves
             switch(piece.toLowerCase()) {
                 case 'p':
                     const newRow = row + direction;
@@ -171,6 +229,36 @@
             }
         }
 
+        function showPromotionDialog(row, col, isWhitePiece) {
+            pendingPromotion = { row, col, isWhitePiece };
+            const modal = document.getElementById('promotion-modal');
+            const choices = document.getElementById('promotion-choices');
+            
+            const promotionOptions = isWhitePiece 
+                ? ['Q', 'R', 'B', 'N'] 
+                : ['q', 'r', 'b', 'n'];
+            
+            choices.innerHTML = promotionOptions.map(p => `
+                <div class="promotion-piece ${isWhitePiece ? 'white' : 'black'}" onclick="promote('${p}')">
+                    ${pieces[p]}
+                </div>
+            `).join('');
+            
+            modal.classList.add('show');
+        }
+
+        function promote(piece) {
+            if (!pendingPromotion) return;
+            
+            board[pendingPromotion.row][pendingPromotion.col] = piece;
+            document.getElementById('promotion-modal').classList.remove('show');
+            pendingPromotion = null;
+            
+            turn = turn === 'white' ? 'black' : 'white';
+            document.getElementById('game-info').textContent = `${turn.charAt(0).toUpperCase() + turn.slice(1)}'s Turn`;
+            render();
+        }
+
         function render() {
             const boardEl = document.getElementById('board');
             boardEl.innerHTML = '';
@@ -192,13 +280,31 @@
         }
 
         function handleSquareClick(r, c) {
+            // Don't allow moves while promotion dialog is open
+            if (pendingPromotion) return;
+            
             const piece = board[r][c];
             
             if (selectedSquare) {
                 const [sr, sc] = selectedSquare;
                 if (validMoves.some(m => m[0] === r && m[1] === c)) {
-                    board[r][c] = board[sr][sc];
+                    const movingPiece = board[sr][sc];
+                    
+                    // Move the piece
+                    board[r][c] = movingPiece;
                     board[sr][sc] = '';
+                    
+                    // Check for pawn promotion
+                    if (movingPiece.toLowerCase() === 'p') {
+                        if ((isWhite(movingPiece) && r === 0) || (isBlack(movingPiece) && r === 7)) {
+                            selectedSquare = null;
+                            validMoves = [];
+                            render();
+                            showPromotionDialog(r, c, isWhite(movingPiece));
+                            return;
+                        }
+                    }
+                    
                     turn = turn === 'white' ? 'black' : 'white';
                     document.getElementById('game-info').textContent = `${turn.charAt(0).toUpperCase() + turn.slice(1)}'s Turn`;
                 }
@@ -225,7 +331,9 @@
             selectedSquare = null;
             turn = 'white';
             validMoves = [];
+            pendingPromotion = null;
             document.getElementById('game-info').textContent = "White's Turn";
+            document.getElementById('promotion-modal').classList.remove('show');
             render();
         }
 
