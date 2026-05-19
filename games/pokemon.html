@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pokemon - LSI Games</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: linear-gradient(135deg, #2c3e50, #1a252f);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: monospace;
+            padding: 10px;
+        }
+        
+        .gameboy {
+            background: linear-gradient(145deg, #8b8b8b, #6b6b6b);
+            border-radius: 20px 20px 60px 60px;
+            padding: 25px;
+            box-shadow: 
+                inset 0 2px 10px rgba(255,255,255,0.2),
+                0 10px 40px rgba(0,0,0,0.5);
+            position: relative;
+            max-width: 100%;
+        }
+        
+        .screen-frame {
+            background: #4a4a68;
+            border-radius: 10px;
+            padding: 20px 25px 25px 25px;
+            margin-bottom: 15px;
+        }
+        
+        .power-light {
+            width: 10px;
+            height: 10px;
+            background: #ff0000;
+            border-radius: 50%;
+            margin-bottom: 10px;
+            box-shadow: 0 0 10px #ff0000;
+            animation: blink 2s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .battery-text {
+            color: #1a1a2e;
+            font-size: 8px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        
+        .screen {
+            width: 320px;
+            height: 288px;
+            max-width: 85vw;
+            max-height: 60vh;
+            background: #9bbc0f;
+            border: 4px solid #1a1a2e;
+            border-radius: 5px;
+            position: relative;
+            overflow: hidden;
+            image-rendering: pixelated;
+        }
+        
+        .screen-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Game Boy Color Palette */
+        .darkest { color: #0f380f; background: #0f380f; }
+        .dark { color: #306230; background: #306230; }
+        .light { color: #8bac0f; background: #8bac0f; }
+        .lightest { color: #9bbc0f; background: #9bbc0f; }
+        
+        /* Buttons */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+        }
+        
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 35px);
+            grid-template-rows: repeat(3, 35px);
+            gap: 2px;
+        }
+        
+        .dpad-btn {
+            background: #2c2c2c;
+            border: none;
+            border-radius: 3px;
+            color: #1a1a2e;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .dpad-btn:active {
+            background: #1a1a1a;
+        }
+        
+        .dpad-btn.empty {
+            background: transparent;
+        }
+        
+        .dpad-center {
+            background: #2c2c2c;
+            border-radius: 50%;
+        }
+        
+        .ab-buttons {
+            display: flex;
+            gap: 15px;
+            transform: rotate(-25deg);
+        }
+        
+        .action-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #8b2346, #5c1830);
+            border: none;
+            color: #1a1a2e;
+            font-size: 16px;
+            font-weight: bold;
+            font-family: monospace;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .action-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .start-select {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 10px;
+        }
+        
+        .small-btn {
+            width: 40px;
+            height: 12px;
+            background: #4a4a4a;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transform: rotate(-25deg);
+        }
+        
+        .small-btn:active {
+            background: #3a3a3a;
+        }
+        
+        .brand {
+            text-align: center;
+            margin-top: 15px;
+            color: #1a1a2e;
+            font-weight: bold;
+            font-size: 18px;
+            font-style: italic;
+            letter-spacing: 3px;
+            text-shadow: 1px 1px 0 #4a4a4a;
+        }
+        
+        /* Game Styles */
+        #game {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+        }
+        
+        .dialog {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #9bbc0f;
+            border-top: 4px solid #0f380f;
+            padding: 10px;
+            font-size: 14px;
+            color: #0f380f;
+            min-height: 80px;
+        }
+        
+        .dialog-text {
+            line-height: 1.5;
+        }
+        
+        .menu {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #9bbc0f;
+            border: 3px solid #0f380f;
+            padding: 5px;
+            font-size: 12px;
+            color: #0f380f;
+        }
+        
+        .menu-item {
+            padding: 3px 10px;
+            cursor: pointer;
+        }
+        
+        .menu-item.selected {
+            background: #0f380f;
+            color: #9bbc0f;
+        }
+        
+        @media (max-width: 400px) {
+            .screen {
+                width: 280px;
+                height: 252px;
+            }
+            .gameboy {
+                padding: 15px;
+            }
+            .dpad {
+                grid-template-columns: repeat(3, 30px);
+                grid-template-rows: repeat(3, 30px);
+            }
+            .action-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="gameboy">
+        <div class="screen-frame">
+            <div class="power-light"></div>
+            <div class="battery-text">BATTERY</div>
+            <div class="screen">
+                <canvas id="game"></canvas>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="dpad">
+                <div class="dpad-btn empty"></div>
+                <button class="dpad-btn" id="up">▲</button>
+                <div class="dpad-btn empty"></div>
+                <button class="dpad-btn" id="left">◀</button>
+                <div class="dpad-btn dpad-center"></div>
+                <button class="dpad-btn" id="right">▶</button>
+                <div class="dpad-btn empty"></div>
+                <button class="dpad-btn" id="down">▼</button>
+                <div class="dpad-btn empty"></div>
+            </div>
+            
+            <div class="ab-buttons">
+                <button class="action-btn" id="btn-b">B</button>
+                <button class="action-btn" id="btn-a">A</button>
+            </div>
+        </div>
+        
+        <div class="start-select">
+            <button class="small-btn" id="btn-select"></button>
+            <button class="small-btn" id="btn-start"></button>
+        </div>
+        
+        <div class="brand">GAME BOY</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        
+        // Game Boy resolution
+        canvas.width = 160;
+        canvas.height = 144;
+        
+        // Game Boy colors
+        const COLORS = {
+            lightest: '#9bbc0f',
+            light: '#8bac0f',
+            dark: '#306230',
+            darkest: '#0f380f'
+        };
+        
+        // Game state
+        const game = {
+            state: 'title', // title, world, battle, menu
+            player: {
+                x: 80,
+                y: 72,
+                sprite: '◢◣',
+                direction: 'down'
+            },
+            map: [],
+            pokemon: [
+                { name: 'BULBASAUR', hp: 45, maxHp: 45, level: 5, attacks: ['TACKLE', 'GROWL'] },
+            ],
+            wildPokemon: [
+                { name: 'RATTATA', hp: 30, maxHp: 30, level: 3 },
+                { name: 'PIDGEY', hp: 35, maxHp: 35, level: 4 },
+                { name: 'CATERPIE', hp: 25, maxHp: 25, level: 3 },
+                { name: 'WEEDLE', hp: 25, maxHp: 25, level: 3 },
+            ],
+            inBattle: false,
+            enemy: null,
+            dialog: '',
+            menuOpen: false,
+            menuSelection: 0,
+            battleMenu: 0,
+            frame: 0
+        };
+        
+        // Generate simple map
+        function generateMap() {
+            const map = [];
+            for (let y = 0; y < 18; y++) {
+                map[y] = [];
+                for (let x = 0; x < 20; x++) {
+                    // Border walls
+                    if (x === 0 || x === 19 || y === 0 || y === 17) {
+                        map[y][x] = 2; // Tree
+                    } else if (Math.random() < 0.1) {
+                        map[y][x] = 2; // Random trees
+                    } else if (Math.random() < 0.15) {
+                        map[y][x] = 1; // Tall grass
+                    } else {
+                        map[y][x] = 0; // Ground
+                    }
+                }
+            }
+            // Clear spawn area
+            for (let y = 7; y < 10; y++) {
+                for (let x = 8; x < 12; x++) {
+                    map[y][x] = 0;
+                }
+            }
+            return map;
+        }
+        
+        game.map = generateMap();
+        
+        // Draw functions
+        function drawTile(x, y, type) {
+            const px = x * 8;
+            const py = y * 8;
+            
+            ctx.fillStyle = COLORS.lightest;
+            ctx.fillRect(px, py, 8, 8);
+            
+            if (type === 1) { // Tall grass
+                ctx.fillStyle = COLORS.dark;
+                ctx.fillRect(px, py + 4, 2, 4);
+                ctx.fillRect(px + 3, py + 2, 2, 6);
+                ctx.fillRect(px + 6, py + 4, 2, 4);
+            } else if (type === 2) { // Tree
+                ctx.fillStyle = COLORS.dark;
+                ctx.fillRect(px + 2, py, 4, 4);
+                ctx.fillStyle = COLORS.darkest;
+                ctx.fillRect(px + 1, py + 4, 6, 4);
+                ctx.fillRect(px + 3, py + 6, 2, 2);
+            }
+        }
+        
+        function drawPlayer() {
+            const px = game.player.x;
+            const py = game.player.y;
+            
+            ctx.fillStyle = COLORS.darkest;
+            
+            // Simple sprite
+            ctx.fillRect(px - 4, py - 6, 8, 4); // Head
+            ctx.fillRect(px - 3, py - 2, 6, 6); // Body
+            ctx.fillRect(px - 4, py + 4, 3, 3); // Left leg
+            ctx.fillRect(px + 1, py + 4, 3, 3); // Right leg
+            
+            // Hat
+            ctx.fillStyle = COLORS.dark;
+            ctx.fillRect(px - 5, py - 8, 10, 2);
+        }
+        
+        function drawDialog(text) {
+            ctx.fillStyle = COLORS.lightest;
+            ctx.fillRect(0, 104, 160, 40);
+            ctx.strokeStyle = COLORS.darkest;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(2, 106, 156, 36);
+            
+            ctx.fillStyle = COLORS.darkest;
+            ctx.font = '10px monospace';
+            
+            // Word wrap
+            const words = text.split(' ');
+            let line = '';
+            let y = 118;
+            
+            for (const word of words) {
+                if ((line + word).length > 20) {
+                    ctx.fillText(line, 8, y);
+                    line = word + ' ';
+                    y += 12;
+                } else {
+                    line += word + ' ';
+                }
+            }
+            ctx.fillText(line, 8, y);
+        }
+        
+        function drawTitle() {
+            ctx.fillStyle = COLORS.lightest;
+            ctx.fillRect(0, 0, 160, 144);
+            
+            // Title
+            ctx.fillStyle = COLORS.darkest;
+            ctx.font = '16px monospace';
+            ctx.fillText('POKEMON', 45, 40);
+            
+            // Subtitle
+            ctx.font = '10px monospace';
+            ctx.fillText('GREEN VERSION', 42, 55);
+            
+            // Pokemon sprite (simple)
+            ctx.fillStyle = COLORS.dark;
+            ctx.fillRect(65, 70, 30, 25);
+            ctx.fillRect(60, 75, 10, 15);
+            ctx.fillRect(90, 75, 10, 15);
+            ctx.fillStyle = COLORS.darkest;
+            ctx.fillRect(72, 78, 4, 4);
+            ctx.fillRect(82, 78, 4, 4);
+            
+            // Instructions
+            ctx.fillStyle = COLORS.darkest;
+            ctx.font = '8px monospace';
+            ctx.fillText('PRESS START', 52, 120);
+            
+            // Blinking
+            if (Math.floor(game.frame / 30) % 2 === 0) {
+                ctx.fillText('▶', 42, 120);
+            }
+        }
+        
+        function drawWorld() {
+            // Draw map
+            for (let y = 0; y < 18; y++) {
+                for (let x = 0; x < 20; x++) {
+                    drawTile(x, y, game.map[y][x]);
+                }
+            }
+            
+            // Draw player
+            drawPlayer();
+            
+            // Draw HUD
+            ctx.fillStyle = COLORS.darkest;
+            ctx.font = '8px monospace';
+            ctx.fillText('POKEMON: ' + game.pokemon[0].name, 2, 10);
+            ctx.fillText('HP: ' + game.pokemon[0].hp + '/' + game.pokemon[0].maxHp, 2, 20);
+            
+            // Dialog
+            if (game.dialog) {
+                drawDialog(game.dialog);
+            }
+        }
+        
+        function drawBattle() {
+            ctx.fillStyle = COLORS.lightest;
+            ctx.fillRect(0, 0, 160, 144);
+            
+            // Enemy Pokemon
+            ctx.fillStyle = COLORS.dark;
+            ctx.fillRect(110, 20, 35, 30);
+            ctx.fillStyle = COLORS.darkest;
+            ctx.font = '8px monospace';
+            ctx.fillText(game.enemy.name, 80, 15);
+            ctx.fillText('Lv' + game.enemy.level, 130, 15);
+            
+            // Enemy HP bar
+            ctx.fillStyle = COLORS.darkest;
+            ctx.fillRect(80, 22, 50, 8);
+            ctx.fillStyle = COLORS.light;
+            const enemyHpWidth = (game.enemy.hp / game.enemy.maxHp) * 46;
+            ctx.fillRect(82, 24, enemyHpWidth, 4);
+            
+            // Player Pokemon
+            ctx.fillStyle = COLORS.dark;
+            ctx.fillRect(20, 60, 40, 35);
+            
+            ctx.fillStyle = COLORS.darkest;
+            ctx.font = '8px monospace';
+            ctx.fillText(game.pokemon[0].name, 10, 110);
+            ctx.fillText('Lv' + game.pokemon[0].level, 50, 110);
+            
+            // Player HP bar
+            ctx.fillStyle = COLORS.darkest;
+            ctx.fillRect(10, 115, 70, 12);
+            ctx.fillStyle = COLORS.light;
+            ctx.fillRect(12, 117, 66, 8);
+            ctx.fillStyle = game.pokemon[0].hp > game.pokemon[0].maxHp * 0.3 ? COLORS.dark : COLORS.darkest;
+            const hpWidth = (game.pokemon[0].hp / game.pokemon[0].maxHp) * 64;
+            ctx.fillRect(14, 119, hpWidth, 4);
+            
+            // HP text
+            ctx.fillStyle = COLORS.darkest;
+            ctx.font = '8px monospace';
+            ctx.fillText(game.pokemon[0].hp + '/' + game.pokemon[0].maxHp, 110, 128);
+            
+            // Battle menu
+            ctx.fillStyle = COLORS.lightest;
+            ctx.fillRect(0, 130, 160, 14);
+            ctx.strokeStyle = COLORS.darkest;
+            ctx.strokeRect(0, 130, 160, 14);
+            
+            ctx.font = '8px monospace';
+            ctx.fillStyle = COLORS.darkest;
+            
+            const options = ['ATTACK', 'CATCH', 'RUN'];
+            options.forEach((opt, i) => {
+                if (i === game.battleMenu) {
+                    ctx.fillText('▶', 10 + i * 50, 140);
+                }
+                ctx.fillText(opt, 20 + i * 50, 140);
+            });
+        }
+        
+        // Input handling
+        const keys = {};
+        
+        document.addEventListener('keydown', e => {
+            keys[e.key] = true;
+            if (e.key === ' ') e.preventDefault();
+        });
+        
+        document.addEventListener('keyup', e => {
+            keys[e.key] = false;
+        });
+        
+        // Mobile button handlers
+        function setupButton(id, key) {
+            const btn = document.getElementById(id);
+            
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handleInput(key, true);
+            }, { passive: false });
+            
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                handleInput(key, false);
+            }, { passive: false });
+            
+            btn.addEventListener('mousedown', () => handleInput(key, true));
+            btn.addEventListener('mouseup', () => handleInput(key, false));
+        }
+        
+        function handleInput(key, pressed) {
+            if (game.state === 'title' && (key === 'start' || key === 'a')) {
+                game.state = 'world';
+                game.dialog = 'Welcome to the world of POKEMON! Walk in tall grass to find wild POKEMON!';
+            } else if (game.state === 'world') {
+                if (pressed) movePlayer(key);
+            } else if (game.state === 'battle') {
+                if (pressed) battleInput(key);
+            }
+        }
+        
+        setupButton('up', 'ArrowUp');
+        setupButton('down', 'ArrowDown');
+        setupButton('left', 'ArrowLeft');
+        setupButton('right', 'ArrowRight');
+        setupButton('btn-a', 'a');
+        setupButton('btn-b', 'b');
+        setupButton('btn-start', 'start');
+        setupButton('btn-select', 'select');
+        
+        function movePlayer(dir) {
+            let newX = game.player.x;
+            let newY = game.player.y;
+            
+            if (dir === 'ArrowUp') newY -= 8;
+            if (dir === 'ArrowDown') newY += 8;
+            if (dir === 'ArrowLeft') newX -= 8;
+            if (dir === 'ArrowRight') newX += 8;
+            
+            const tileX = Math.floor(newX / 8);
+            const tileY = Math.floor(newY / 8);
+            
+            if (tileX >= 0 && tileX < 20 && tileY >= 0 && tileY < 18) {
+                if (game.map[tileY][tileX] !== 2) {
+                    game.player.x = newX;
+                    game.player.y = newY;
+                    
+                    // Check for wild encounter
+                    if (game.map[tileY][tileX] === 1 && Math.random() < 0.15) {
+                        startBattle();
+                    }
+                }
+            }
+        }
+        
+        function startBattle() {
+            game.state = 'battle';
+            game.enemy = {...game.wildPokemon[Math.floor(Math.random() * game.wildPokemon.length)]};
+            game.enemy.hp = game.enemy.maxHp;
+            game.dialog = 'Wild ' + game.enemy.name + ' appeared!';
+        }
+        
+        function battleInput(key) {
+            if (key === 'ArrowLeft') game.battleMenu = Math.max(0, game.battleMenu - 1);
+            if (key === 'ArrowRight') game.battleMenu = Math.min(2, game.battleMenu + 1);
+            
+            if (key === 'a') {
+                if (game.battleMenu === 0) { // Attack
+                    const damage = Math.floor(Math.random() * 15) + 5;
+                    game.enemy.hp = Math.max(0, game.enemy.hp - damage);
+                    game.dialog = game.pokemon[0].name + ' used TACKLE! ' + damage + ' damage!';
+                    
+                    if (game.enemy.hp <= 0) {
+                        setTimeout(() => {
+                            game.state = 'world';
+                            game.dialog = game.enemy.name + ' fainted! You won!';
+                        }, 1000);
+                    } else {
+                        // Enemy attacks back
+                        setTimeout(() => {
+                            const enemyDmg = Math.floor(Math.random() * 10) + 3;
+                            game.pokemon[0].hp = Math.max(0, game.pokemon[0].hp - enemyDmg);
+                            game.dialog = game.enemy.name + ' attacked! ' + enemyDmg + ' damage!';
+                            
+                            if (game.pokemon[0].hp <= 0) {
+                                setTimeout(() => {
+                                    game.state = 'world';
+                                    game.pokemon[0].hp = game.pokemon[0].maxHp;
+                                    game.dialog = 'You blacked out...';
+                                }, 1000);
+                            }
+                        }, 1500);
+                    }
+                } else if (game.battleMenu === 2) { // Run
+                    if (Math.random() < 0.8) {
+                        game.state = 'world';
+                        game.dialog = 'Got away safely!';
+                    } else {
+                        game.dialog = "Can't escape!";
+                    }
+                } else if (game.battleMenu === 1) { // Catch
+                    const catchChance = (1 - game.enemy.hp / game.enemy.maxHp) * 0.5;
+                    if (Math.random() < catchChance) {
+                        game.dialog = 'Gotcha! ' + game.enemy.name + ' was caught!';
+                        setTimeout(() => {
+                            game.state = 'world';
+                        }, 1500);
+                    } else {
+                        game.dialog = 'Oh no! It broke free!';
+                    }
+                }
+            }
+        }
+        
+        // Game loop
+        function update() {
+            game.frame++;
+            
+            // Keyboard input for desktop
+            if (game.state === 'world') {
+                if (keys['ArrowUp'] || keys['w']) movePlayer('ArrowUp');
+                if (keys['ArrowDown'] || keys['s']) movePlayer('ArrowDown');
+                if (keys['ArrowLeft'] || keys['a']) movePlayer('ArrowLeft');
+                if (keys['ArrowRight'] || keys['d']) movePlayer('ArrowRight');
+            } else if (game.state === 'battle') {
+                if (keys['ArrowLeft']) { game.battleMenu = Math.max(0, game.battleMenu - 1); keys['ArrowLeft'] = false; }
+                if (keys['ArrowRight']) { game.battleMenu = Math.min(2, game.battleMenu + 1); keys['ArrowRight'] = false; }
+                if (keys[' '] || keys['Enter']) { battleInput('a'); keys[' '] = false; keys['Enter'] = false; }
+            } else if (game.state === 'title') {
+                if (keys[' '] || keys['Enter']) {
+                    game.state = 'world';
+                    game.dialog = 'Welcome! Walk in grass to find POKEMON!';
+                    keys[' '] = false;
+                    keys['Enter'] = false;
+                }
+            }
+        }
+        
+        function draw() {
+            if (game.state === 'title') {
+                drawTitle();
+            } else if (game.state === 'world') {
+                drawWorld();
+            } else if (game.state === 'battle') {
+                drawBattle();
+                if (game.dialog) drawDialog(game.dialog);
+            }
+        }
+        
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        gameLoop();
+    </script>
+</body>
+</html>
