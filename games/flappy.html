@@ -162,18 +162,19 @@
         let highScore = parseInt(localStorage.getItem('flappyHighScore') || '0');
         highScoreDisplay.textContent = `Best: ${highScore}`;
 
-        // Bird (adjusted for full screen)
+        // Bird (EASIER SETTINGS)
         const bird = {
             x: 0,
             y: 0,
-            width: 40,
-            height: 32,
+            width: 45,
+            height: 36,
             velocity: 0,
-            gravity: 0.5,
-            jumpStrength: -9,
+            gravity: 0.35,           // Lower gravity (was 0.5)
+            jumpStrength: -8,        // Good jump height
+            maxFallSpeed: 8,         // Cap falling speed
             
             reset() {
-                this.x = canvas.width * 0.2;
+                this.x = canvas.width * 0.25;
                 this.y = canvas.height / 2;
                 this.velocity = 0;
             },
@@ -184,6 +185,10 @@
             
             update() {
                 this.velocity += this.gravity;
+                // Cap fall speed
+                if (this.velocity > this.maxFallSpeed) {
+                    this.velocity = this.maxFallSpeed;
+                }
                 this.y += this.velocity;
             },
             
@@ -198,43 +203,43 @@
                 ctx.fillStyle = '#ffa500';
                 const wingY = this.y + this.height/2 + Math.sin(Date.now() / 50) * 4;
                 ctx.beginPath();
-                ctx.ellipse(this.x + this.width/2 - 5, wingY, 10, 6, 0, 0, Math.PI * 2);
+                ctx.ellipse(this.x + this.width/2 - 5, wingY, 12, 7, 0, 0, Math.PI * 2);
                 ctx.fill();
                 
                 // Eye
                 ctx.fillStyle = 'white';
                 ctx.beginPath();
-                ctx.arc(this.x + this.width - 10, this.y + 10, 8, 0, Math.PI * 2);
+                ctx.arc(this.x + this.width - 12, this.y + 12, 9, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.fillStyle = 'black';
                 ctx.beginPath();
-                ctx.arc(this.x + this.width - 7, this.y + 10, 4, 0, Math.PI * 2);
+                ctx.arc(this.x + this.width - 9, this.y + 12, 5, 0, Math.PI * 2);
                 ctx.fill();
                 
                 // Beak
                 ctx.fillStyle = '#ff6b35';
                 ctx.beginPath();
                 ctx.moveTo(this.x + this.width, this.y + this.height/2);
-                ctx.lineTo(this.x + this.width + 12, this.y + this.height/2 + 4);
-                ctx.lineTo(this.x + this.width, this.y + this.height/2 + 8);
+                ctx.lineTo(this.x + this.width + 14, this.y + this.height/2 + 5);
+                ctx.lineTo(this.x + this.width, this.y + this.height/2 + 10);
                 ctx.closePath();
                 ctx.fill();
             }
         };
 
-        // Pipes (scaled for full screen)
+        // Pipes (EASIER - wider gaps, slower)
         const pipes = [];
-        let pipeWidth = 70;
-        let pipeGap = 180;
+        let pipeWidth = 80;
+        let pipeGap = 250;          // Much wider gap (was 180)
         let pipeTimer = 0;
-        const pipeInterval = 100;
-        let pipeSpeed = 3;
+        const pipeInterval = 120;   // More time between pipes
+        let pipeSpeed = 2.5;        // Slower pipes (was 3)
 
         function createPipe() {
-            pipeWidth = Math.max(60, canvas.width * 0.1);
-            pipeGap = Math.max(150, canvas.height * 0.22);
+            pipeWidth = Math.max(70, canvas.width * 0.11);
+            pipeGap = Math.max(220, canvas.height * 0.32);  // 32% of screen height = big gap
             
-            const minHeight = 80;
+            const minHeight = 100;
             const maxHeight = canvas.height - pipeGap - minHeight - 50;
             const topHeight = Math.random() * (maxHeight - minHeight) + minHeight;
             
@@ -256,22 +261,21 @@
             
             // Top pipe
             ctx.fillRect(pipe.x, 0, pipeWidth, pipe.topHeight);
-            ctx.fillRect(pipe.x - 8, pipe.topHeight - 30, pipeWidth + 16, 30);
+            ctx.fillRect(pipe.x - 8, pipe.topHeight - 35, pipeWidth + 16, 35);
             
             // Bottom pipe
             ctx.fillRect(pipe.x, pipe.bottomY, pipeWidth, canvas.height - pipe.bottomY);
-            ctx.fillRect(pipe.x - 8, pipe.bottomY, pipeWidth + 16, 30);
+            ctx.fillRect(pipe.x - 8, pipe.bottomY, pipeWidth + 16, 35);
             
             // Highlights
             ctx.fillStyle = 'rgba(255,255,255,0.2)';
-            ctx.fillRect(pipe.x + 8, 0, 12, pipe.topHeight - 30);
-            ctx.fillRect(pipe.x + 8, pipe.bottomY + 30, 12, canvas.height - pipe.bottomY - 30);
+            ctx.fillRect(pipe.x + 10, 0, 15, pipe.topHeight - 35);
+            ctx.fillRect(pipe.x + 10, pipe.bottomY + 35, 15, canvas.height - pipe.bottomY - 35);
         }
 
         // Background
         let bgOffset = 0;
         function drawBackground() {
-            // Sky gradient
             const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
             skyGradient.addColorStop(0, '#87CEEB');
             skyGradient.addColorStop(0.6, '#E0F7FA');
@@ -279,7 +283,6 @@
             ctx.fillStyle = skyGradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Clouds
             ctx.fillStyle = 'rgba(255,255,255,0.9)';
             for (let i = 0; i < 6; i++) {
                 const cloudX = ((i * (canvas.width / 3) + bgOffset * 0.2) % (canvas.width + 80)) - 40;
@@ -287,15 +290,12 @@
                 drawCloud(cloudX, cloudY);
             }
             
-            // Ground
             ctx.fillStyle = '#8B4513';
             ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
             
-            // Grass
             ctx.fillStyle = '#228B22';
             ctx.fillRect(0, canvas.height - 90, canvas.width, 15);
             
-            // Grass detail
             ctx.fillStyle = '#32CD32';
             for (let i = 0; i < canvas.width; i += 20) {
                 ctx.fillRect(i, canvas.height - 95, 10, 8);
@@ -310,17 +310,22 @@
             ctx.fill();
         }
 
-        // Collision detection
+        // Collision detection (more forgiving)
         function checkCollision() {
-            // Ground and ceiling
-            if (bird.y + bird.height > canvas.height - 90 || bird.y < 0) {
+            // Ground and ceiling (with margin)
+            if (bird.y + bird.height > canvas.height - 85 || bird.y < -10) {
                 return true;
             }
             
-            // Pipes
+            // Pipes (smaller hitbox for bird)
+            const birdLeft = bird.x + 10;
+            const birdRight = bird.x + bird.width - 10;
+            const birdTop = bird.y + 8;
+            const birdBottom = bird.y + bird.height - 8;
+            
             for (const pipe of pipes) {
-                if (bird.x + bird.width - 8 > pipe.x && bird.x + 8 < pipe.x + pipeWidth) {
-                    if (bird.y + 8 < pipe.topHeight || bird.y + bird.height - 8 > pipe.bottomY) {
+                if (birdRight > pipe.x && birdLeft < pipe.x + pipeWidth) {
+                    if (birdTop < pipe.topHeight || birdBottom > pipe.bottomY) {
                         return true;
                     }
                 }
@@ -353,9 +358,9 @@
                     score++;
                     scoreDisplay.textContent = score;
                     
-                    // Increase difficulty
-                    if (score % 5 === 0) {
-                        pipeSpeed += 0.3;
+                    // Slower difficulty increase
+                    if (score % 10 === 0 && pipeSpeed < 4) {
+                        pipeSpeed += 0.2;
                     }
                 }
                 
@@ -379,8 +384,8 @@
             score = 0;
             scoreDisplay.textContent = '0';
             pipes.length = 0;
-            pipeTimer = 70;
-            pipeSpeed = 3;
+            pipeTimer = 90;
+            pipeSpeed = 2.5;
             bird.reset();
             overlay.classList.add('hidden');
             gameLoop();
@@ -434,7 +439,6 @@
             handleInput();
         }, { passive: false });
 
-        // Prevent scrolling
         document.body.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 
         // Initial draw
