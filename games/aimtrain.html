@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AimTrain - LSI Games</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', -apple-system, sans-serif; 
+            background: linear-gradient(135deg, #0f0f23, #1a1a3e); 
+            min-height: 100vh;
+            color: white;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        #hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 0.7rem;
+            opacity: 0.6;
+            text-transform: uppercase;
+        }
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+        #timer { color: #ffd700; }
+        #score { color: #4CAF50; }
+        #accuracy { color: #2196F3; }
+        #arena {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            cursor: crosshair;
+        }
+        .target {
+            position: absolute;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .target:active {
+            transform: translate(-50%, -50%) scale(0.9);
+        }
+        .target.normal {
+            background: radial-gradient(circle at 30% 30%, #ff6b6b, #c0392b);
+            box-shadow: 0 0 20px rgba(255,107,107,0.5), inset 0 0 10px rgba(0,0,0,0.3);
+        }
+        .target.bonus {
+            background: radial-gradient(circle at 30% 30%, #ffd700, #f39c12);
+            box-shadow: 0 0 25px rgba(255,215,0,0.7), inset 0 0 10px rgba(0,0,0,0.3);
+            animation: pulse 0.5s ease-in-out infinite;
+        }
+        .target.shrink {
+            background: radial-gradient(circle at 30% 30%, #9b59b6, #8e44ad);
+            box-shadow: 0 0 20px rgba(155,89,182,0.5), inset 0 0 10px rgba(0,0,0,0.3);
+        }
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+        .hit-effect {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: hitExpand 0.3s ease-out forwards;
+        }
+        @keyframes hitExpand {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+        }
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.85);
+            z-index: 200;
+        }
+        #overlay.hidden { display: none; }
+        #overlay h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #ff6b6b, #ffd700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        #overlay h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #ffd700;
+        }
+        #overlay .subtitle {
+            opacity: 0.7;
+            margin-bottom: 30px;
+            font-size: 1rem;
+        }
+        .results {
+            background: rgba(255,255,255,0.1);
+            padding: 20px 40px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px 30px;
+        }
+        .result-item {
+            text-align: center;
+        }
+        .result-label {
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+        .result-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .btn {
+            background: linear-gradient(135deg, #ff6b6b, #c0392b);
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            font-size: 1.2rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: bold;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(255,107,107,0.4);
+        }
+        .btn:active { transform: scale(0.95); }
+        #backLink {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            z-index: 150;
+        }
+        .mode-select {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .mode-btn {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mode-btn:hover, .mode-btn.selected {
+            background: rgba(255,255,255,0.2);
+            border-color: #ff6b6b;
+        }
+        .crosshair {
+            position: fixed;
+            pointer-events: none;
+            z-index: 150;
+            font-size: 24px;
+            color: rgba(255,255,255,0.7);
+        }
+        .miss-marker {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: rgba(255,0,0,0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        #highScore {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" id="backLink">← Back to Games</a>
+    
+    <div id="hud">
+        <div class="stat">
+            <div class="stat-label">Time</div>
+            <div class="stat-value" id="timer">30</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Score</div>
+            <div class="stat-value" id="score">0</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Accuracy</div>
+            <div class="stat-value" id="accuracy">100%</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Avg Time</div>
+            <div class="stat-value" id="avgTime">0ms</div>
+        </div>
+    </div>
+    
+    <div id="arena"></div>
+    
+    <div id="overlay">
+        <h1>🎯 AimTrain</h1>
+        <p class="subtitle">Improve your aim and reaction time!</p>
+        
+        <div class="mode-select">
+            <button class="mode-btn selected" data-mode="classic" onclick="selectMode('classic')">Classic</button>
+            <button class="mode-btn" data-mode="speed" onclick="selectMode('speed')">Speed</button>
+            <button class="mode-btn" data-mode="precision" onclick="selectMode('precision')">Precision</button>
+            <button class="mode-btn" data-mode="frenzy" onclick="selectMode('frenzy')">Frenzy</button>
+        </div>
+        
+        <button class="btn" onclick="startGame()">Start Training</button>
+        <div id="highScore">Best Score: 0</div>
+    </div>
+
+    <script>
+        const arena = document.getElementById('arena');
+        const overlay = document.getElementById('overlay');
+        const timerDisplay = document.getElementById('timer');
+        const scoreDisplay = document.getElementById('score');
+        const accuracyDisplay = document.getElementById('accuracy');
+        const avgTimeDisplay = document.getElementById('avgTime');
+        const highScoreDisplay = document.getElementById('highScore');
+
+        let gameRunning = false;
+        let score = 0;
+        let hits = 0;
+        let misses = 0;
+        let timeLeft = 30;
+        let gameTimer = null;
+        let targetTimer = null;
+        let currentTarget = null;
+        let targetSpawnTime = 0;
+        let reactionTimes = [];
+        let selectedMode = 'classic';
+        let highScores = JSON.parse(localStorage.getItem('aimTrainHighScores') || '{}');
+
+        const modeSettings = {
+            classic: { size: 50, duration: 1500, bonus: false, shrink: false },
+            speed: { size: 45, duration: 1000, bonus: true, shrink: false },
+            precision: { size: 30, duration: 2000, bonus: false, shrink: true },
+            frenzy: { size: 40, duration: 800, bonus: true, shrink: true }
+        };
+
+        highScoreDisplay.textContent = `Best Score: ${highScores[selectedMode] || 0}`;
+
+        function selectMode(mode) {
+            selectedMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.mode === mode);
+            });
+            highScoreDisplay.textContent = `Best Score: ${highScores[mode] || 0}`;
+        }
+
+        function startGame() {
+            gameRunning = true;
+            score = 0;
+            hits = 0;
+            misses = 0;
+            timeLeft = 30;
+            reactionTimes = [];
+            
+            updateHUD();
+            overlay.classList.add('hidden');
+            arena.innerHTML = '';
+            
+            // Count targets for misses tracking
+            arena.onclick = (e) => {
+                if (e.target === arena) {
+                    misses++;
+                    updateHUD();
+                    // Show miss marker
+                    const rect = arena.getBoundingClientRect();
+                    const marker = document.createElement('div');
+                    marker.className = 'miss-marker';
+                    marker.style.left = (e.clientX - rect.left) + 'px';
+                    marker.style.top = (e.clientY - rect.top) + 'px';
+                    arena.appendChild(marker);
+                    setTimeout(() => marker.remove(), 500);
+                }
+            };
+            
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+                if (timeLeft <= 0) gameOver();
+            }, 1000);
+            
+            spawnTarget();
+        }
+
+        function spawnTarget() {
+            if (!gameRunning) return;
+            
+            const settings = modeSettings[selectedMode];
+            const rect = arena.getBoundingClientRect();
+            
+            // Random size variation
+            const sizeVariation = settings.shrink ? Math.random() * 20 - 10 : 0;
+            const size = settings.size + sizeVariation;
+            
+            // Random position
+            const x = Math.random() * (rect.width - size * 2) + size;
+            const y = Math.random() * (rect.height - size * 2) + size + 70;
+            
+            // Create target
+            const target = document.createElement('div');
+            target.className = 'target';
+            
+            // Bonus targets
+            if (settings.bonus && Math.random() > 0.7) {
+                target.classList.add('bonus');
+                target.points = 3;
+            } else if (settings.shrink && Math.random() > 0.8) {
+                target.classList.add('shrink');
+                target.points = 2;
+            } else {
+                target.classList.add('normal');
+                target.points = 1;
+            }
+            
+            target.style.width = size + 'px';
+            target.style.height = size + 'px';
+            target.style.left = x + 'px';
+            target.style.top = (y - 70) + 'px';
+            
+            // Shrink effect
+            if (settings.shrink) {
+                setTimeout(() => {
+                    if (target.parentNode) {
+                        target.style.transition = 'transform 0.5s linear';
+                        target.style.transform = 'translate(-50%, -50%) scale(0.5)';
+                    }
+                }, settings.duration * 0.5);
+            }
+            
+            targetSpawnTime = Date.now();
+            
+            target.onclick = (e) => {
+                e.stopPropagation();
+                hitTarget(target);
+            };
+            
+            arena.appendChild(target);
+            currentTarget = target;
+            
+            // Remove after duration
+            targetTimer = setTimeout(() => {
+                if (target.parentNode) {
+                    target.remove();
+                    if (gameRunning) spawnTarget();
+                }
+            }, settings.duration);
+        }
+
+        function hitTarget(target) {
+            const reactionTime = Date.now() - targetSpawnTime;
+            reactionTimes.push(reactionTime);
+            
+            const points = target.points || 1;
+            score += points;
+            hits++;
+            
+            // Hit effect
+            const rect = arena.getBoundingClientRect();
+            const effect = document.createElement('div');
+            effect.className = 'hit-effect';
+            effect.style.width = target.style.width;
+            effect.style.height = target.style.height;
+            effect.style.left = target.style.left;
+            effect.style.top = target.style.top;
+            effect.style.background = target.classList.contains('bonus') 
+                ? 'rgba(255,215,0,0.5)' 
+                : 'rgba(255,107,107,0.5)';
+            arena.appendChild(effect);
+            setTimeout(() => effect.remove(), 300);
+            
+            target.remove();
+            clearTimeout(targetTimer);
+            
+            updateHUD();
+            spawnTarget();
+        }
+
+        function updateHUD() {
+            scoreDisplay.textContent = score;
+            const total = hits + misses;
+            const accuracy = total > 0 ? Math.round((hits / total) * 100) : 100;
+            accuracyDisplay.textContent = accuracy + '%';
+            
+            if (reactionTimes.length > 0) {
+                const avg = Math.round(reactionTimes.reduce((a,b) => a+b) / reactionTimes.length);
+                avgTimeDisplay.textContent = avg + 'ms';
+            }
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            clearInterval(gameTimer);
+            clearTimeout(targetTimer);
+            
+            const avg = reactionTimes.length > 0 
+                ? Math.round(reactionTimes.reduce((a,b) => a+b) / reactionTimes.length) 
+                : 0;
+            const total = hits + misses;
+            const accuracy = total > 0 ? Math.round((hits / total) * 100) : 0;
+            
+            // Save high score
+            if (score > (highScores[selectedMode] || 0)) {
+                highScores[selectedMode] = score;
+                localStorage.setItem('aimTrainHighScores', JSON.stringify(highScores));
+            }
+            
+            overlay.innerHTML = `
+                <h2>Game Over!</h2>
+                <div class="results">
+                    <div class="results-grid">
+                        <div class="result-item">
+                            <div class="result-label">Score</div>
+                            <div class="result-value" style="color: #4CAF50">${score}</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">Accuracy</div>
+                            <div class="result-value" style="color: #2196F3">${accuracy}%</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">Targets Hit</div>
+                            <div class="result-value">${hits}/${total}</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">Avg Reaction</div>
+                            <div class="result-value" style="color: #ffd700">${avg}ms</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mode-select">
+                    <button class="mode-btn ${selectedMode === 'classic' ? 'selected' : ''}" data-mode="classic" onclick="selectMode('classic')">Classic</button>
+                    <button class="mode-btn ${selectedMode === 'speed' ? 'selected' : ''}" data-mode="speed" onclick="selectMode('speed')">Speed</button>
+                    <button class="mode-btn ${selectedMode === 'precision' ? 'selected' : ''}" data-mode="precision" onclick="selectMode('precision')">Precision</button>
+                    <button class="mode-btn ${selectedMode === 'frenzy' ? 'selected' : ''}" data-mode="frenzy" onclick="selectMode('frenzy')">Frenzy</button>
+                </div>
+                
+                <button class="btn" onclick="startGame()">Play Again</button>
+                <div id="highScore">Best Score: ${highScores[selectedMode] || score}</div>
+            `;
+            overlay.classList.remove('hidden');
+        }
+
+        // Touch support
+        arena.addEventListener('touchstart', (e) => {
+            if (!gameRunning) return;
+            
+            const touch = e.touches[0];
+            const target = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            if (target && target.classList.contains('target')) {
+                e.preventDefault();
+                hitTarget(target);
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>
