@@ -6,19 +6,22 @@
     <title>Snake</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { 
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
         body { 
             font-family: 'Segoe UI', sans-serif; 
             background: linear-gradient(135deg, #1a1a2e, #16213e); 
-            min-height: 100vh;
-            min-height: 100dvh;
             display: flex; 
             flex-direction: column;
             align-items: center; 
             padding: 10px;
             color: white;
-            touch-action: manipulation;
+            touch-action: none;
             -webkit-tap-highlight-color: transparent;
-            overflow: hidden;
+            user-select: none;
         }
         h1 { margin: 5px 0; font-size: 1.5rem; }
         #score {
@@ -33,7 +36,8 @@
             border-radius: 8px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             max-width: 95vw;
-            max-height: 50vh;
+            max-height: 45vh;
+            touch-action: none;
         }
         .controls { margin-top: 10px; text-align: center; }
         button {
@@ -46,6 +50,7 @@
             color: white;
             font-weight: 600;
             margin: 3px;
+            touch-action: manipulation;
         }
         button:active { transform: scale(0.95); }
         
@@ -54,30 +59,48 @@
             justify-content: center;
             margin-top: 15px;
             user-select: none;
+            touch-action: none;
         }
         .d-pad {
             display: grid;
-            grid-template-columns: repeat(3, 60px);
-            grid-template-rows: repeat(3, 60px);
+            grid-template-columns: repeat(3, 70px);
+            grid-template-rows: repeat(3, 70px);
             gap: 5px;
         }
         .d-pad button {
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
             padding: 0;
-            font-size: 1.5rem;
+            font-size: 2rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 12px;
+            border-radius: 15px;
             background: linear-gradient(135deg, #4CAF50, #388E3C);
+            border: 2px solid rgba(255,255,255,0.2);
         }
-        .d-pad .empty { visibility: hidden; }
+        .d-pad button:active {
+            background: linear-gradient(135deg, #66BB6A, #4CAF50);
+            transform: scale(0.9);
+        }
+        .d-pad .empty { 
+            visibility: hidden; 
+            pointer-events: none;
+        }
         a { color: #4CAF50; text-decoration: none; margin-top: 10px; font-size: 0.85rem; }
         
+        .swipe-hint {
+            font-size: 0.8rem;
+            opacity: 0.6;
+            margin-top: 10px;
+        }
+        
         @media (max-width: 400px) {
-            .d-pad { grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); }
-            .d-pad button { width: 50px; height: 50px; font-size: 1.3rem; }
+            .d-pad { 
+                grid-template-columns: repeat(3, 60px); 
+                grid-template-rows: repeat(3, 60px); 
+            }
+            .d-pad button { width: 60px; height: 60px; font-size: 1.5rem; }
         }
     </style>
 </head>
@@ -88,15 +111,15 @@
     
     <div class="mobile-controls">
         <div class="d-pad">
-            <button class="empty"></button>
-            <button class="up" ontouchstart="setDirection(0,-1)" onclick="setDirection(0,-1)">▲</button>
-            <button class="empty"></button>
-            <button class="left" ontouchstart="setDirection(-1,0)" onclick="setDirection(-1,0)">◀</button>
-            <button class="empty"></button>
-            <button class="right" ontouchstart="setDirection(1,0)" onclick="setDirection(1,0)">▶</button>
-            <button class="empty"></button>
-            <button class="down" ontouchstart="setDirection(0,1)" onclick="setDirection(0,1)">▼</button>
-            <button class="empty"></button>
+            <div class="empty"></div>
+            <button id="btn-up">▲</button>
+            <div class="empty"></div>
+            <button id="btn-left">◀</button>
+            <div class="empty"></div>
+            <button id="btn-right">▶</button>
+            <div class="empty"></div>
+            <button id="btn-down">▼</button>
+            <div class="empty"></div>
         </div>
     </div>
     
@@ -104,12 +127,13 @@
         <button onclick="resetGame()">Restart</button>
     </div>
     <a href="../index.html">← Back</a>
+    <div class="swipe-hint">Swipe on game area or use buttons</div>
 
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         
-        const size = Math.min(window.innerWidth * 0.95, window.innerHeight * 0.5, 400);
+        const size = Math.min(window.innerWidth * 0.95, window.innerHeight * 0.45, 400);
         canvas.width = size;
         canvas.height = size;
         
@@ -122,32 +146,135 @@
         let score = 0;
         let gameLoop;
         
+        // Button controls
+        const btnUp = document.getElementById('btn-up');
+        const btnDown = document.getElementById('btn-down');
+        const btnLeft = document.getElementById('btn-left');
+        const btnRight = document.getElementById('btn-right');
+        
+        // Touch events for d-pad buttons
+        function addTouchControl(btn, dirX, dirY) {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDirection(dirX, dirY);
+            }, { passive: false });
+            
+            btn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                setDirection(dirX, dirY);
+            });
+            
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                setDirection(dirX, dirY);
+            });
+        }
+        
+        addTouchControl(btnUp, 0, -1);
+        addTouchControl(btnDown, 0, 1);
+        addTouchControl(btnLeft, -1, 0);
+        addTouchControl(btnRight, 1, 0);
+        
+        // Swipe controls on canvas
+        let touchStartX = 0;
+        let touchStartY = 0;
+        
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }, { passive: false });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+        
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            
+            const diffX = touchEndX - touchStartX;
+            const diffY = touchEndY - touchStartY;
+            
+            const minSwipe = 30;
+            
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (Math.abs(diffX) > minSwipe) {
+                    setDirection(diffX > 0 ? 1 : -1, 0);
+                }
+            } else {
+                if (Math.abs(diffY) > minSwipe) {
+                    setDirection(0, diffY > 0 ? 1 : -1);
+                }
+            }
+        }, { passive: false });
+        
         function draw() {
             ctx.fillStyle = '#1a1a2e';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
+            // Draw food
             ctx.fillStyle = '#e74c3c';
-            ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize-2, gridSize-2);
+            ctx.beginPath();
+            ctx.arc(
+                food.x * gridSize + gridSize/2, 
+                food.y * gridSize + gridSize/2, 
+                gridSize/2 - 2, 
+                0, Math.PI * 2
+            );
+            ctx.fill();
             
-            ctx.fillStyle = '#4CAF50';
+            // Draw snake
             snake.forEach((seg, i) => {
-                ctx.fillStyle = i === 0 ? '#66BB6A' : '#4CAF50';
-                ctx.fillRect(seg.x * gridSize, seg.y * gridSize, gridSize-2, gridSize-2);
+                if (i === 0) {
+                    // Head
+                    ctx.fillStyle = '#81C784';
+                    ctx.beginPath();
+                    ctx.arc(
+                        seg.x * gridSize + gridSize/2,
+                        seg.y * gridSize + gridSize/2,
+                        gridSize/2 - 1,
+                        0, Math.PI * 2
+                    );
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.fillRect(
+                        seg.x * gridSize + 2, 
+                        seg.y * gridSize + 2, 
+                        gridSize - 4, 
+                        gridSize - 4
+                    );
+                }
             });
         }
         
         function update() {
+            if (dx === 0 && dy === 0) {
+                return; // Don't move until player presses a direction
+            }
+            
             const head = {x: snake[0].x + dx, y: snake[0].y + dy};
             
+            // Wall collision - game over
             if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
                 clearInterval(gameLoop);
-                alert('Game Over! Score: ' + score);
+                setTimeout(() => {
+                    alert('Game Over! Score: ' + score);
+                    resetGame();
+                }, 100);
                 return;
             }
             
+            // Self collision
             if (snake.some(s => s.x === head.x && s.y === head.y)) {
                 clearInterval(gameLoop);
-                alert('Game Over! Score: ' + score);
+                setTimeout(() => {
+                    alert('Game Over! Score: ' + score);
+                    resetGame();
+                }, 100);
                 return;
             }
             
@@ -170,30 +297,65 @@
         }
         
         function setDirection(x, y) {
+            // Prevent reversing direction
+            if (x !== 0 && dx === -x) return;
+            if (y !== 0 && dy === -y) return;
+            
+            // Prevent diagonal movement
             if ((x !== 0 && dx === 0) || (y !== 0 && dy === 0)) {
-                dx = x; dy = y;
+                dx = x; 
+                dy = y;
+            } else if (dx === 0 && dy === 0) {
+                // Allow any direction when stopped
+                dx = x;
+                dy = y;
             }
         }
         
         function resetGame() {
             snake = [{x: 10, y: 10}];
-            dx = 0; dy = 0;
+            dx = 0; 
+            dy = 0;
             score = 0;
             document.getElementById('score').textContent = 'Score: 0';
             placeFood();
             clearInterval(gameLoop);
-            gameLoop = setInterval(update, 100);
+            gameLoop = setInterval(update, 120);
             draw();
         }
         
+        // Keyboard controls
         document.addEventListener('keydown', e => {
             switch(e.key) {
-                case 'ArrowUp': setDirection(0, -1); break;
-                case 'ArrowDown': setDirection(0, 1); break;
-                case 'ArrowLeft': setDirection(-1, 0); break;
-                case 'ArrowRight': setDirection(1, 0); break;
+                case 'ArrowUp': 
+                case 'w':
+                case 'W':
+                    e.preventDefault();
+                    setDirection(0, -1); 
+                    break;
+                case 'ArrowDown': 
+                case 's':
+                case 'S':
+                    e.preventDefault();
+                    setDirection(0, 1); 
+                    break;
+                case 'ArrowLeft': 
+                case 'a':
+                case 'A':
+                    e.preventDefault();
+                    setDirection(-1, 0); 
+                    break;
+                case 'ArrowRight': 
+                case 'd':
+                case 'D':
+                    e.preventDefault();
+                    setDirection(1, 0); 
+                    break;
             }
         });
+        
+        // Prevent body scroll
+        document.body.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
         
         resetGame();
     </script>
