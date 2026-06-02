@@ -1,359 +1,61 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chess</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background: linear-gradient(135deg, #1a1a2e, #16213e); 
-            min-height: 100vh; 
-            min-height: 100dvh;
-            display: flex; 
-            flex-direction: column;
-            align-items: center; 
-            padding: 10px;
-            color: white;
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-        }
-        h1 { margin: 10px 0; font-size: 1.5rem; }
-        #game-info {
-            background: rgba(255,255,255,0.1);
-            padding: 10px 20px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            font-size: 1rem;
-        }
-        #board { 
-            display: grid; 
-            grid-template-columns: repeat(8, 1fr);
-            border: 3px solid #8b4513;
-            border-radius: 4px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: min(90vw, 90vh, 480px);
-            aspect-ratio: 1;
-        }
-        .square {
-            width: 100%;
-            aspect-ratio: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: clamp(24px, 8vw, 45px);
-            cursor: pointer;
-            user-select: none;
-            -webkit-user-select: none;
-            transition: all 0.2s;
-        }
-        .square.light { background: #f0d9b5; }
-        .square.dark { background: #b58863; }
-        .square.selected { background: #7fc97f !important; }
-        .square.valid-move { background: #ffff99 !important; }
-        .square:active { opacity: 0.7; }
-        .controls { margin-top: 15px; display: flex; gap: 10px; }
-        button {
-            padding: 12px 24px;
-            font-size: 1rem;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            font-weight: 600;
-            transition: transform 0.2s;
-        }
-        button:active { transform: scale(0.95); }
-        a { color: #667eea; text-decoration: none; margin-top: 15px; font-size: 0.9rem; }
-        
-        /* Promotion Modal */
-        #promotion-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-        #promotion-modal.show { display: flex; }
-        .promotion-content {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            padding: 30px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-        }
-        .promotion-content h2 {
-            margin-bottom: 20px;
-            font-size: 1.3rem;
-        }
-        .promotion-pieces {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-        }
-        .promotion-piece {
-            width: 70px;
-            height: 70px;
-            font-size: 45px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255,255,255,0.1);
-            border: 2px solid rgba(255,255,255,0.2);
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .promotion-piece:hover, .promotion-piece:active {
-            background: rgba(255,255,255,0.2);
-            transform: scale(1.1);
-            border-color: #667eea;
-        }
-        .promotion-piece.white { color: #fff; }
-        .promotion-piece.black { color: #333; background: #ddd; }
-        
-        /* Board pieces - make black and white visually distinct */
-        .piece-white { 
-            color: #ffffff; 
-            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 2px #000; 
-        }
-        .piece-black { 
-            color: #1a1a1a; 
-            text-shadow: 0 0 1px #666; 
-        }
-    </style>
-</head>
-<body>
-    <h1>♔ Chess ♚</h1>
-    <div id="game-info">White's Turn</div>
-    <div id="board"></div>
-    <div class="controls">
-        <button onclick="resetGame()">New Game</button>
-    </div>
-    <a href="../index.html">← Back to Games</a>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Chess</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#1a1a2e,#16213e);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;padding:10px;color:white;touch-action:manipulation}
+h1{margin:10px 0;font-size:1.5rem}#game-info{background:rgba(255,255,255,0.1);padding:10px 20px;border-radius:10px;margin-bottom:10px;font-size:1rem;text-align:center}
+#game-info.check{background:rgba(255,0,0,0.3)}#game-info.checkmate{background:rgba(255,0,0,0.5);font-weight:bold}
+#board{display:grid;grid-template-columns:repeat(8,1fr);border:3px solid #8b4513;border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,0.5);width:min(90vw,90vh,480px);aspect-ratio:1}
+.square{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:clamp(24px,8vw,45px);cursor:pointer;user-select:none;-webkit-user-select:none;transition:all 0.2s}
+.square.light{background:#f0d9b5}.square.dark{background:#b58863}.square.selected{background:#7fc97f!important}.square.valid-move{background:#ffff99!important}
+.square.last-move{box-shadow:inset 0 0 8px rgba(255,255,0,0.5)}.square.in-check{background:#ff6b6b!important}.square:active{opacity:0.7}
+.controls{margin-top:15px;display:flex;gap:10px}button{padding:12px 24px;font-size:1rem;border:none;border-radius:8px;cursor:pointer;background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-weight:600;transition:transform 0.2s}button:active{transform:scale(0.95)}
+a{color:#667eea;text-decoration:none;margin-top:15px;font-size:0.9rem}
+#promotion-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000;align-items:center;justify-content:center}#promotion-modal.show{display:flex}
+.promotion-content{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:30px;border-radius:20px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+.promotion-content h2{margin-bottom:20px;font-size:1.3rem}.promotion-pieces{display:flex;gap:15px;justify-content:center}
+.promotion-piece{width:70px;height:70px;font-size:45px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.2);border-radius:10px;cursor:pointer;transition:all 0.2s}
+.promotion-piece:hover,.promotion-piece:active{background:rgba(255,255,255,0.2);transform:scale(1.1);border-color:#667eea}
+.promotion-piece.white{color:#fff}.promotion-piece.black{color:#333;background:#ddd}
+.piece-white{color:#fff;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 2px #000}
+.piece-black{color:#1a1a1a;text-shadow:0 0 1px #666}</style></head>
+<body><h1>Chess</h1><div id="game-info">White's Turn</div><div id="board"></div>
+<div class="controls"><button onclick="resetGame()">New Game</button></div><a href="../index.html">Back</a>
+<div id="promotion-modal"><div class="promotion-content"><h2>Choose Promotion</h2><div class="promotion-pieces" id="promotion-choices"></div></div></div>
+<script>
+var S={'K':'\u2654','Q':'\u2655','R':'\u2656','B':'\u2657','N':'\u2658','P':'\u2659','k':'\u265a','q':'\u265b','r':'\u265c','b':'\u265d','n':'\u265e','p':'\u265f'};
+var I=[['r','n','b','q','k','b','n','r'],['p','p','p','p','p','p','p','p'],['','','','','','','',''],['','','','','','','',''],['','','','','','','',''],['','','','','','','',''],['P','P','P','P','P','P','P','P'],['R','N','B','Q','K','B','N','R']];
+var B,sel,turn,VM,PP,CR,EP,LM,GO;
+function iw(p){return p&&p===p.toUpperCase()}
+function gc(p){return iw(p)?'white':'black'}
+function cb(b){var n=[];for(var i=0;i<8;i++){n[i]=[];for(var j=0;j<8;j++)n[i][j]=b[i][j]}return n}
+function fk(c,b){var k=c==='white'?'K':'k';for(var i=0;i<8;i++)for(var j=0;j<8;j++)if(b[i][j]===k)return[i,j]}
+function sa(r,c,by,b){for(var i=0;i<8;i++)for(var j=0;j<8;j++){var p=b[i][j];if(!p||gc(p)!==by)continue;var m=gr(i,j,p,b,1);for(var k=0;k<m.length;k++)if(m[k][0]===r&&m[k][1]===c)return 1}}
+function ic(c,b){var k=fk(c,b);return k&&sa(k[0],k[1],c==='white'?'black':'white',b)}
+function gr(r,c,p,b,ao){
+var m=[],cl=gc(p),w=iw(p),t=p.toLowerCase();
+if(t==='p'){var d=w?-1:1,st=w?6:1;if(!ao&&r+d>=0&&r+d<8&&!b[r+d][c]){m.push([r+d,c]);if(r===st&&!b[r+2*d][c])m.push([r+2*d,c])}
+for(var i=-1;i<=1;i+=2){var nc=c+i,nr=r+d;if(nc>=0&&nc<8&&nr>=0&&nr<8){if(b[nr][nc]&&gc(b[nr][nc])!==cl)m.push([nr,nc]);if(!ao&&EP&&EP[0]===nr&&EP[1]===nc)m.push([nr,nc,'ep'])}}}
+else if(t==='n'){var js=[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];for(var i=0;i<js.length;i++){var nr=r+js[i][0],nc=c+js[i][1];if(nr>=0&&nr<8&&nc>=0&&nc<8&&(!b[nr][nc]||gc(b[nr][nc])!==cl))m.push([nr,nc])}}
+else if(t==='b'||t==='r'||t==='q'){var ds=t==='b'?[[-1,-1],[-1,1],[1,-1],[1,1]]:t==='r'?[[-1,0],[1,0],[0,-1],[0,1]]:[[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]];
+for(var i=0;i<ds.length;i++){var dr=ds[i][0],dc=ds[i][1];for(var j=1;j<8;j++){var nr=r+dr*j,nc=c+dc*j;if(nr<0||nr>=8||nc<0||nc>=8)break;if(!b[nr][nc])m.push([nr,nc]);else{if(gc(b[nr][nc])!==cl)m.push([nr,nc]);break}}}}
+else if(t==='k'){for(var dr=-1;dr<=1;dr++)for(var dc=-1;dc<=1;dc++){if(dr===0&&dc===0)continue;var nr=r+dr,nc=c+dc;if(nr>=0&&nr<8&&nc>=0&&nc<8&&(!b[nr][nc]||gc(b[nr][nc])!==cl))m.push([nr,nc])}
+if(!ao&&!ic(cl,b)){var kr=w?7:0,ec=w?'black':'white';if(CR[cl].ks&&b[kr][7]&&b[kr][7].toLowerCase()==='r'&&!b[kr][5]&&!b[kr][6]&&!sa(kr,5,ec,b)&&!sa(kr,6,ec,b))m.push([kr,6,'ck']);
+if(CR[cl].qs&&b[kr][0]&&b[kr][0].toLowerCase()==='r'&&!b[kr][1]&&!b[kr][2]&&!b[kr][3]&&!sa(kr,2,ec,b)&&!sa(kr,3,ec,b))m.push([kr,2,'cq'])}}
+return m}
+function gvm(r,c){var p=B[r][c];if(!p)return[];var cl=gc(p),raw=gr(r,c,p,B,0),res=[];for(var i=0;i<raw.length;i++){var mv=raw[i],tb=cb(B);tb[mv[0]][mv[1]]=p;tb[r][c]='';if(mv.length>2&&mv[2]==='ep')tb[cl==='white'?mv[0]+1:mv[0]-1][mv[1]]='';if(!ic(cl,tb))res.push(mv)}return res}
+function hlm(c){for(var i=0;i<8;i++)for(var j=0;j<8;j++)if(B[i][j]&&gc(B[i][j])===c&&gvm(i,j).length)return 1}
+function mm(fr,fc,tr,tc,sp){var p=B[fr][fc],cl=gc(p),kr=cl==='white'?7:0;
+if(sp==='ck'){B[kr][6]=p;B[kr][4]='';B[kr][5]=B[kr][7];B[kr][7]=''}
 
-    <div id="promotion-modal">
-        <div class="promotion-content">
-            <h2>Choose Promotion</h2>
-            <div class="promotion-pieces" id="promotion-choices"></div>
-        </div>
-    </div>
-
-    <script>
-        const pieces = {
-            'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
-            'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟'
-        };
-
-        let board = [
-            ['r','n','b','q','k','b','n','r'],
-            ['p','p','p','p','p','p','p','p'],
-            ['','','','','','','',''],
-            ['','','','','','','',''],
-            ['','','','','','','',''],
-            ['','','','','','','',''],
-            ['P','P','P','P','P','P','P','P'],
-            ['R','N','B','Q','K','B','N','R']
-        ];
-
-        let selectedSquare = null;
-        let turn = 'white';
-        let validMoves = [];
-        let pendingPromotion = null;
-
-        function isWhite(p) { return p && p === p.toUpperCase(); }
-        function isBlack(p) { return p && p === p.toLowerCase(); }
-        
-        function isEnemy(p1, p2) {
-            if (!p1 || !p2) return false;
-            return (isWhite(p1) && isBlack(p2)) || (isBlack(p1) && isWhite(p2));
-        }
-
-        function getValidMoves(row, col) {
-            const piece = board[row][col];
-            if (!piece) return [];
-            
-            const moves = [];
-            const isW = isWhite(piece);
-            const direction = isW ? -1 : 1;
-
-            switch(piece.toLowerCase()) {
-                case 'p':
-                    const newRow = row + direction;
-                    if (newRow >= 0 && newRow < 8 && !board[newRow][col]) {
-                        moves.push([newRow, col]);
-                        if ((isW && row === 6) || (!isW && row === 1)) {
-                            if (!board[row + 2*direction][col]) moves.push([row + 2*direction, col]);
-                        }
-                    }
-                    [-1, 1].forEach(dc => {
-                        const nc = col + dc;
-                        if (nc >= 0 && nc < 8 && newRow >= 0 && newRow < 8) {
-                            if (board[newRow][nc] && isEnemy(piece, board[newRow][nc])) moves.push([newRow, nc]);
-                        }
-                    });
-                    break;
-                case 'r':
-                    [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr, dc]) => addLineMoves(row, col, dr, dc, moves));
-                    break;
-                case 'n':
-                    [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr, dc]) => {
-                        const nr = row + dr, nc = col + dc;
-                        if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-                            if (!board[nr][nc] || isEnemy(piece, board[nr][nc])) moves.push([nr, nc]);
-                        }
-                    });
-                    break;
-                case 'b':
-                    [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr, dc]) => addLineMoves(row, col, dr, dc, moves));
-                    break;
-                case 'q':
-                    [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr, dc]) => addLineMoves(row, col, dr, dc, moves));
-                    break;
-                case 'k':
-                    [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr, dc]) => {
-                        const nr = row + dr, nc = col + dc;
-                        if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-                            if (!board[nr][nc] || isEnemy(piece, board[nr][nc])) moves.push([nr, nc]);
-                        }
-                    });
-                    break;
-            }
-            return moves;
-        }
-
-        function addLineMoves(row, col, dr, dc, moves) {
-            const piece = board[row][col];
-            for (let i = 1; i < 8; i++) {
-                const nr = row + dr*i, nc = col + dc*i;
-                if (nr < 0 || nr >= 8 || nc < 0 || nc >= 8) break;
-                if (!board[nr][nc]) moves.push([nr, nc]);
-                else { if (isEnemy(piece, board[nr][nc])) moves.push([nr, nc]); break; }
-            }
-        }
-
-        function showPromotionDialog(row, col, isWhitePiece) {
-            pendingPromotion = { row, col, isWhitePiece };
-            const modal = document.getElementById('promotion-modal');
-            const choices = document.getElementById('promotion-choices');
-            
-            const promotionOptions = isWhitePiece 
-                ? ['Q', 'R', 'B', 'N'] 
-                : ['q', 'r', 'b', 'n'];
-            
-            choices.innerHTML = promotionOptions.map(p => \`
-                <div class="promotion-piece \${isWhitePiece ? 'white' : 'black'}" onclick="promote('\${p}')">
-                    \${pieces[p]}
-                </div>
-            \`).join('');
-            
-            modal.classList.add('show');
-        }
-
-        function promote(piece) {
-            if (!pendingPromotion) return;
-            
-            board[pendingPromotion.row][pendingPromotion.col] = piece;
-            document.getElementById('promotion-modal').classList.remove('show');
-            pendingPromotion = null;
-            
-            turn = turn === 'white' ? 'black' : 'white';
-            document.getElementById('game-info').textContent = \`\${turn.charAt(0).toUpperCase() + turn.slice(1)}'s Turn\`;
-            render();
-        }
-
-        function render() {
-            const boardEl = document.getElementById('board');
-            boardEl.innerHTML = '';
-            
-            for (let r = 0; r < 8; r++) {
-                for (let c = 0; c < 8; c++) {
-                    const square = document.createElement('div');
-                    square.className = \`square \${(r + c) % 2 === 0 ? 'light' : 'dark'}\`;
-                    if (selectedSquare && selectedSquare[0] === r && selectedSquare[1] === c) square.classList.add('selected');
-                    if (validMoves.some(m => m[0] === r && m[1] === c)) square.classList.add('valid-move');
-                    
-                    const pieceCode = board[r][c];
-                    if (pieceCode) {
-                        const pieceSpan = document.createElement('span');
-                        pieceSpan.textContent = pieces[pieceCode];
-                        pieceSpan.className = isWhite(pieceCode) ? 'piece-white' : 'piece-black';
-                        square.appendChild(pieceSpan);
-                    }
-                    square.addEventListener('click', () => handleSquareClick(r, c));
-                    square.addEventListener('touchend', (e) => { e.preventDefault(); handleSquareClick(r, c); });
-                    
-                    boardEl.appendChild(square);
-                }
-            }
-        }
-
-        function handleSquareClick(r, c) {
-            // Don't allow moves while promotion dialog is open
-            if (pendingPromotion) return;
-            
-            const piece = board[r][c];
-            
-            if (selectedSquare) {
-                const [sr, sc] = selectedSquare;
-                if (validMoves.some(m => m[0] === r && m[1] === c)) {
-                    const movingPiece = board[sr][sc];
-                    
-                    // Move the piece
-                    board[r][c] = movingPiece;
-                    board[sr][sc] = '';
-                    
-                    // Check for pawn promotion
-                    if (movingPiece.toLowerCase() === 'p') {
-                        if ((isWhite(movingPiece) && r === 0) || (isBlack(movingPiece) && r === 7)) {
-                            selectedSquare = null;
-                            validMoves = [];
-                            render();
-                            showPromotionDialog(r, c, isWhite(movingPiece));
-                            return;
-                        }
-                    }
-                    
-                    turn = turn === 'white' ? 'black' : 'white';
-                    document.getElementById('game-info').textContent = \`\${turn.charAt(0).toUpperCase() + turn.slice(1)}'s Turn\`;
-                }
-                selectedSquare = null;
-                validMoves = [];
-            } else if (piece && ((turn === 'white' && isWhite(piece)) || (turn === 'black' && isBlack(piece)))) {
-                selectedSquare = [r, c];
-                validMoves = getValidMoves(r, c);
-            }
-            render();
-        }
-
-        function resetGame() {
-            board = [
-                ['r','n','b','q','k','b','n','r'],
-                ['p','p','p','p','p','p','p','p'],
-                ['','','','','','','',''],
-                ['','','','','','','',''],
-                ['','','','','','','',''],
-                ['','','','','','','',''],
-                ['P','P','P','P','P','P','P','P'],
-                ['R','N','B','Q','K','B','N','R']
-            ];
-            selectedSquare = null;
-            turn = 'white';
-            validMoves = [];
-            pendingPromotion = null;
-            document.getElementById('game-info').textContent = "White's Turn";
-            document.getElementById('promotion-modal').classList.remove('show');
-            render();
-        }
-
-        render();
-    </script>
-</body>
-</html>
+if(sp==='cq'){B[kr][2]=p;B[kr][4]='';B[kr][3]=B[kr][0];B[kr][0]=''}
+else{if(sp==='ep')B[cl==='white'?tr+1:tr-1][tc]='';B[tr][tc]=p;B[fr][fc]=''}
+LM={f:[fr,fc],t:[tr,tc]};if(p.toLowerCase()==='k'){CR[cl].ks=0;CR[cl].qs=0}if(p.toLowerCase()==='r'){if(fc===0)CR[cl].qs=0;if(fc===7)CR[cl].ks=0}
+EP=p.toLowerCase()==='p'&&Math.abs(tr-fr)===2?[(fr+tr)/2,fc]:null;return p.toLowerCase()==='p'&&((cl==='white'&&tr===0)||(cl==='black'&&tr===7))}
+function shpr(r,c,w){PP={r:r,c:c,w:w};var os=w?['Q','R','B','N']:['q','r','b','n'],h='';for(var i=0;i<os.length;i++)h+='<div class="promotion-piece '+(w?'white':'black')+'" onclick="pr(\x27'+os[i]+'\x27)">'+S[os[i]]+'</div>';document.getElementById('promotion-choices').innerHTML=h;document.getElementById('promotion-modal').classList.add('show')}
+function pr(p){B[PP.r][PP.c]=p;document.getElementById('promotion-modal').classList.remove('show');PP=null;ft()}
+function ft(){turn=turn==='white'?'black':'white';var ch=ic(turn,B),lg=hlm(turn),el=document.getElementById('game-info');if(!lg){GO=1;el.textContent=ch?'Checkmate! '+(turn==='white'?'Black':'White')+' wins!':'Stalemate!';el.className='checkmate'}else{el.textContent=turn.charAt(0).toUpperCase()+turn.slice(1)+"'s Turn"+(ch?' - CHECK!':'');el.className=ch?'check':''}rn()}
+function rn(){var el=document.getElementById('board');el.innerHTML='';var ch=ic(turn,B),kp=fk(turn,B);
+for(var r=0;r<8;r++){for(var c=0;c<8;c++){var sq=document.createElement('div');sq.className='square '+((r+c)%2===0?'light':'dark');if(sel&&sel[0]===r&&sel[1]===c)sq.classList.add('selected');for(var i=0;i<VM.length;i++)if(VM[i][0]===r&&VM[i][1]===c)sq.classList.add('valid-move');if(LM&&((LM.f[0]===r&&LM.f[1]===c)||(LM.t[0]===r&&LM.t[1]===c)))sq.classList.add('last-move');if(ch&&kp&&kp[0]===r&&kp[1]===c)sq.classList.add('in-check');if(B[r][c]){var sp=document.createElement('span');sp.textContent=S[B[r][c]];sp.className=iw(B[r][c])?'piece-white':'piece-black';sq.appendChild(sp)}(function(row,col){sq.onclick=function(){hc(row,col)}})(r,c);el.appendChild(sq)}}}
+function hc(r,c){if(GO||PP)return;if(sel){var mv=null;for(var i=0;i<VM.length;i++)if(VM[i][0]===r&&VM[i][1]===c){mv=VM[i];break}if(mv){var pm=mm(sel[0],sel[1],mv[0],mv[1],mv.length>2?mv[2]:null);sel=null;VM=[];if(pm){rn();shpr(mv[0],mv[1],turn==='white');return}ft();return}sel=null;VM=[]}if(B[r][c]&&gc(B[r][c])===turn){sel=[r,c];VM=gvm(r,c)}rn()}
+function resetGame(){B=cb(I);sel=null;turn='white';VM=[];PP=null;LM=null;GO=0;CR={white:{ks:1,qs:1},black:{ks:1,qs:1}};EP=null;document.getElementById('game-info').textContent="White's Turn";document.getElementById('game-info').className='';document.getElementById('promotion-modal').classList.remove('show');rn()}
+resetGame();
+</script></body></html>
