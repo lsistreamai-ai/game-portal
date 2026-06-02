@@ -68,14 +68,11 @@
         button:active { transform: scale(0.95); }
         a { color: #667eea; text-decoration: none; margin-top: 15px; font-size: 0.9rem; }
         
-        /* Promotion Modal */
         #promotion-modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: rgba(0,0,0,0.8);
             z-index: 1000;
             align-items: center;
@@ -89,18 +86,10 @@
             text-align: center;
             box-shadow: 0 20px 60px rgba(0,0,0,0.5);
         }
-        .promotion-content h2 {
-            margin-bottom: 20px;
-            font-size: 1.3rem;
-        }
-        .promotion-pieces {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-        }
+        .promotion-content h2 { margin-bottom: 20px; font-size: 1.3rem; }
+        .promotion-pieces { display: flex; gap: 15px; justify-content: center; }
         .promotion-piece {
-            width: 70px;
-            height: 70px;
+            width: 70px; height: 70px;
             font-size: 45px;
             display: flex;
             align-items: center;
@@ -119,7 +108,6 @@
         .promotion-piece.white { color: #fff; }
         .promotion-piece.black { color: #333; background: #ddd; }
         
-        /* Board pieces - make black and white visually distinct */
         .piece-white { 
             color: #ffffff; 
             text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 2px #000; 
@@ -244,15 +232,14 @@
             const modal = document.getElementById('promotion-modal');
             const choices = document.getElementById('promotion-choices');
             
-            const promotionOptions = isWhitePiece 
-                ? ['Q', 'R', 'B', 'N'] 
-                : ['q', 'r', 'b', 'n'];
+            const promotionOptions = isWhitePiece ? ['Q', 'R', 'B', 'N'] : ['q', 'r', 'b', 'n'];
             
-            choices.innerHTML = promotionOptions.map(p => \`
-                <div class="promotion-piece \${isWhitePiece ? 'white' : 'black'}" onclick="promote('\${p}')">
-                    \${pieces[p]}
-                </div>
-            \`).join('');
+            let html = '';
+            promotionOptions.forEach(p => {
+                const pieceClass = isWhitePiece ? 'white' : 'black';
+                html += '<div class="promotion-piece ' + pieceClass + '" onclick="promote(\'' + p + '\')">' + pieces[p] + '</div>';
+            });
+            choices.innerHTML = html;
             
             modal.classList.add('show');
         }
@@ -265,7 +252,7 @@
             pendingPromotion = null;
             
             turn = turn === 'white' ? 'black' : 'white';
-            document.getElementById('game-info').textContent = \`\${turn.charAt(0).toUpperCase() + turn.slice(1)}'s Turn\`;
+            document.getElementById('game-info').textContent = turn.charAt(0).toUpperCase() + turn.slice(1) + "'s Turn";
             render();
         }
 
@@ -276,7 +263,8 @@
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
                     const square = document.createElement('div');
-                    square.className = \`square \${(r + c) % 2 === 0 ? 'light' : 'dark'}\`;
+                    const isLight = (r + c) % 2 === 0;
+                    square.className = 'square ' + (isLight ? 'light' : 'dark');
                     if (selectedSquare && selectedSquare[0] === r && selectedSquare[1] === c) square.classList.add('selected');
                     if (validMoves.some(m => m[0] === r && m[1] === c)) square.classList.add('valid-move');
                     
@@ -296,7 +284,6 @@
         }
 
         function handleSquareClick(r, c) {
-            // Don't allow moves while promotion dialog is open
             if (pendingPromotion) return;
             
             const piece = board[r][c];
@@ -306,11 +293,9 @@
                 if (validMoves.some(m => m[0] === r && m[1] === c)) {
                     const movingPiece = board[sr][sc];
                     
-                    // Move the piece
                     board[r][c] = movingPiece;
                     board[sr][sc] = '';
                     
-                    // Check for pawn promotion
                     if (movingPiece.toLowerCase() === 'p') {
                         if ((isWhite(movingPiece) && r === 0) || (isBlack(movingPiece) && r === 7)) {
                             selectedSquare = null;
@@ -322,7 +307,7 @@
                     }
                     
                     turn = turn === 'white' ? 'black' : 'white';
-                    document.getElementById('game-info').textContent = \`\${turn.charAt(0).toUpperCase() + turn.slice(1)}'s Turn\`;
+                    document.getElementById('game-info').textContent = turn.charAt(0).toUpperCase() + turn.slice(1) + "'s Turn";
                 }
                 selectedSquare = null;
                 validMoves = [];
