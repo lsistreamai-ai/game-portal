@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>67 Tapping Game</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+        .tap-area {
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            margin: 20px auto;
+        }
+        .tap-area:active {
+            transform: scale(0.95);
+            background: rgba(255,255,255,0.3);
+        }
+        .tap-area.finished {
+            background: rgba(46, 204, 113, 0.4);
+        }
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        .btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        .hidden { display: none; }
+        .best-time {
+            margin-top: 20px;
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        .instructions {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 20px;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖐️ 67 Taps</h1>
+        <p class="subtitle">How fast can you tap 67 times?</p>
+        
+        <div id="startScreen">
+            <button class="btn" onclick="startGame()">Start Game</button>
+            <p class="best-time" id="bestTime"></p>
+            <p class="instructions">Tap the circle exactly 67 times as fast as you can!</p>
+        </div>
+        
+        <div id="gameScreen" class="hidden">
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="count">0</div>
+                    <div class="stat-label">Taps</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="timer">0.00</div>
+                    <div class="stat-label">Seconds</div>
+                </div>
+            </div>
+            
+            <div class="tap-area" id="tapArea" ontouchstart="handleTap(event)" onclick="handleTap(event)">
+                <span id="tapNumber">0</span>
+            </div>
+        </div>
+        
+        <div id="resultScreen" class="hidden">
+            <h2>🎉 Finished!</h2>
+            <p class="stat-value" style="font-size: 3rem; margin: 20px 0;" id="finalTime">0.00s</p>
+            <p class="best-time" id="resultBest"></p>
+            <button class="btn" onclick="startGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        let count = 0;
+        let startTime = null;
+        let timerInterval = null;
+        let bestTime = localStorage.getItem('tapping67_best') || null;
+
+        function updateBestTime() {
+            const bestEl = document.getElementById('bestTime');
+            const resultBestEl = document.getElementById('resultBest');
+            if (bestTime) {
+                bestEl.textContent = `🏆 Best: ${parseFloat(bestTime).toFixed(2)}s`;
+                resultBestEl.textContent = `🏆 Best: ${parseFloat(bestTime).toFixed(2)}s`;
+            }
+        }
+
+        function startGame() {
+            count = 0;
+            startTime = null;
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            document.getElementById('count').textContent = '0';
+            document.getElementById('tapNumber').textContent = '0';
+            document.getElementById('timer').textContent = '0.00';
+            document.getElementById('tapArea').classList.remove('finished');
+            updateBestTime();
+        }
+
+        function handleTap(e) {
+            e.preventDefault();
+            
+            if (count >= 67) return;
+            
+            count++;
+            
+            if (!startTime) {
+                startTime = Date.now();
+                timerInterval = setInterval(updateTimer, 10);
+            }
+            
+            document.getElementById('count').textContent = count;
+            document.getElementById('tapNumber').textContent = count;
+            
+            if (count >= 67) {
+                clearInterval(timerInterval);
+                const elapsed = (Date.now() - startTime) / 1000;
+                
+                if (!bestTime || elapsed < parseFloat(bestTime)) {
+                    bestTime = elapsed.toFixed(2);
+                    localStorage.setItem('tapping67_best', bestTime);
+                }
+                
+                document.getElementById('tapArea').classList.add('finished');
+                document.getElementById('finalTime').textContent = elapsed.toFixed(2) + 's';
+                updateBestTime();
+                
+                setTimeout(() => {
+                    document.getElementById('gameScreen').classList.add('hidden');
+                    document.getElementById('resultScreen').classList.remove('hidden');
+                }, 500);
+            }
+        }
+
+        function updateTimer() {
+            if (startTime) {
+                const elapsed = (Date.now() - startTime) / 1000;
+                document.getElementById('timer').textContent = elapsed.toFixed(2);
+            }
+        }
+
+        updateBestTime();
+    </script>
+</body>
+</html>

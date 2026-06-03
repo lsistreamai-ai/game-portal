@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Reaction Time</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #e74c3c;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            user-select: none;
+            transition: background 0.3s;
+        }
+        .red { background: #e74c3c; }
+        .green { background: #2ecc71; }
+        .too-early { background: #f39c12; }
+        
+        .container {
+            text-align: center;
+            padding: 20px;
+            max-width: 400px;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .instruction {
+            font-size: 1.2rem;
+            margin: 20px 0;
+            opacity: 0.9;
+        }
+        .time {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 30px 0;
+        }
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        .btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 20px 50px;
+            font-size: 1.3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 20px;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        .result-list {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        .result-item {
+            margin: 5px 0;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="red">
+    <div class="container">
+        <h1>⚡ Reaction Time</h1>
+        
+        <div id="startScreen">
+            <p class="instruction">Click when the screen turns GREEN!</p>
+            <button class="btn" onclick="startGame()">Start</button>
+        </div>
+        
+        <div id="waitScreen" class="hidden">
+            <p class="instruction">Wait for green...</p>
+        </div>
+        
+        <div id="clickScreen" class="hidden">
+            <p class="instruction">CLICK NOW!</p>
+        </div>
+        
+        <div id="resultScreen" class="hidden">
+            <div class="time" id="resultTime">0 ms</div>
+            <p class="instruction" id="resultText">Great job!</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="avgTime">0</div>
+                    <div class="stat-label">Average (ms)</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="bestTime">0</div>
+                    <div class="stat-label">Best (ms)</div>
+                </div>
+            </div>
+            <button class="btn" onclick="startGame()">Try Again</button>
+            <div class="result-list" id="resultList"></div>
+        </div>
+        
+        <div id="tooEarlyScreen" class="hidden">
+            <p class="instruction">⚠️ Too early!</p>
+            <p class="instruction" style="font-size: 1rem; opacity: 0.7;">Wait for the green screen</p>
+            <button class="btn" onclick="startGame()">Try Again</button>
+        </div>
+    </div>
+
+    <script>
+        let startTime = null;
+        let timeoutId = null;
+        let results = [];
+        
+        function hideAllScreens() {
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('waitScreen').classList.add('hidden');
+            document.getElementById('clickScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.add('hidden');
+            document.getElementById('tooEarlyScreen').classList.add('hidden');
+        }
+        
+        function startGame() {
+            hideAllScreens();
+            document.getElementById('waitScreen').classList.remove('hidden');
+            document.body.className = 'red';
+            
+            const delay = Math.random() * 3000 + 2000; // 2-5 seconds
+            startTime = null;
+            
+            timeoutId = setTimeout(() => {
+                hideAllScreens();
+                document.getElementById('clickScreen').classList.remove('hidden');
+                document.body.className = 'green';
+                startTime = Date.now();
+            }, delay);
+        }
+        
+        function handleClick() {
+            if (document.getElementById('waitScreen').classList.contains('hidden') === false) {
+                // Too early
+                clearTimeout(timeoutId);
+                hideAllScreens();
+                document.getElementById('tooEarlyScreen').classList.remove('hidden');
+                document.body.className = 'too-early';
+                return;
+            }
+            
+            if (document.getElementById('clickScreen').classList.contains('hidden') === false) {
+                // Valid click
+                const reactionTime = Date.now() - startTime;
+                results.push(reactionTime);
+                
+                hideAllScreens();
+                document.getElementById('resultScreen').classList.remove('hidden');
+                document.body.className = 'green';
+                
+                document.getElementById('resultTime').textContent = reactionTime + ' ms';
+                
+                // Feedback
+                let text = '';
+                if (reactionTime < 150) text = '🚀 Incredible!';
+                else if (reactionTime < 200) text = '⚡ Amazing!';
+                else if (reactionTime < 250) text = '🔥 Great!';
+                else if (reactionTime < 300) text = '👍 Good';
+                else text = '🐢 Keep practicing';
+                document.getElementById('resultText').textContent = text;
+                
+                // Stats
+                const avg = Math.round(results.reduce((a, b) => a + b, 0) / results.length);
+                const best = Math.min(...results);
+                document.getElementById('avgTime').textContent = avg;
+                document.getElementById('bestTime').textContent = best;
+                
+                // Result list
+                const listHtml = results.slice(-5).map((r, i) => 
+                    `<div class="result-item">${i + 1}. ${r} ms</div>`
+                ).join('');
+                document.getElementById('resultList').innerHTML = listHtml;
+            }
+        }
+        
+        document.body.addEventListener('click', handleClick);
+        document.body.addEventListener('touchstart', (e) => {
+            if (e.target.tagName !== 'BUTTON') {
+                handleClick();
+            }
+        });
+    </script>
+</body>
+</html>
